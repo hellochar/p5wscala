@@ -1,0 +1,1 @@
+This repository contains the source code for all sketches related to the Processing with Scala project (located at p5wscala.wordpress.com)
