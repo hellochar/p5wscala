@@ -4,13 +4,32 @@
  * Date: 7/12/11
  * Time: 3:06 PM
  */
-package daily
+package parse.float
 
 import java.io.{InputStreamReader, BufferedReader}
 import scala.util.parsing.combinator._
 
+class VariableFloatParser(names:String*) {
+  val vars: collection.mutable.Map[String, Float] = collection.mutable.Map() ++= names.map(_ -> 0f)
+  val mp = new FloatParser(vars);
 
-class MathParser(
+//    val (memFunc, memCache) = org.zhang.lib.memoize(evalStr _)
+
+/**
+* Evaluates the given string, replacing the variable names with the specified variable values (values must be passed
+* in the same order that names is passed in to the constructor). Extra variables will be disregarded; variables that
+* are unspecified will be unchanged from the last invocation. You may access the underlying "vars" map to have more
+* control.
+*/
+  def eval(s:String, values:Float*) = {
+    names.zip(values).foreach((vars.update _).tupled)
+    mp.parse(s);
+  }
+
+  override def toString = getClass.getSimpleName+"[vars="+vars+"]";
+}
+
+class FloatParser(
   val vars: collection.mutable.Map[String, Float] = collection.mutable.Map(),
 
   val consts:Map[String, Float] = Map(
@@ -28,6 +47,7 @@ class MathParser(
     ).mapValues(_ andThen (_.toFloat))
   }
                   ) extends JavaTokenParsers {
+
 
   //todo: change defs to vals or lazy vals; make sure there aren't any subtle bugs to be had
   def expression: Parser[Float] = (ptTerm ~ rep("+" ~ ptTerm | "-" ~ ptTerm)) ^^ { case start~rest => {
@@ -57,7 +77,7 @@ class MathParser(
 
   def symbol: Parser[Float] = const | variable
 
-  //todo: the parser doesn't update along with the mutable map. write your own mutable parser.
+  //as a val, the parser doesn't update along with the mutable map. write your own mutable parser.
   private def map2Parser[B](map:collection.Map[String, B]):Parser[B] = map.map(_._1:Parser[String]) match {
     case k if k.isEmpty => failure("Map parser failed for "+map)
     case k => k.reduceLeft(_ | _) ^^ map.apply
@@ -76,9 +96,10 @@ class MathParser(
   }
 
 }
-object MathParser {
+object FloatParser {
   def main(args: Array[String]) {
-    val pt = new MathParser();
+    val pt = new FloatParser();
+    pt.vars += "n" -> 3
     val reader = new BufferedReader(new InputStreamReader(System.in))
     while(true) {
       print("Input: ");

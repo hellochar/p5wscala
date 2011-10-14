@@ -77,8 +77,7 @@ class Jun10 extends PApplet {
     for(i <- 1 until img.height) {
       renderLine(i)
     }
-    img.updatePixels
-    return img;
+    img.updatePixels()
   }
 
   trait Decision extends (((Int) => Boolean) => Boolean)

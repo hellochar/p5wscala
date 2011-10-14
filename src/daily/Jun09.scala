@@ -62,8 +62,7 @@ class Jun09 extends PApplet {
     for(i <- 1 until img.height) {
       renderLine(i)
     }
-    img.updatePixels
-    return img;
+    img.updatePixels()
   }
 
   var decision = new Decision {

@@ -9,6 +9,7 @@ package daily
 import processing.core._
 import org.zhang.lib.MyPApplet
 import controlP5.ControlP5
+import parse.float.{FloatParser, VariableFloatParser}
 
 class Sep12 extends MyPApplet with Savable { app =>
   import PApplet._; import PConstants._;
@@ -36,7 +37,7 @@ class Sep12 extends MyPApplet with Savable { app =>
 
   object Parser {
     val vars: collection.mutable.Map[String, Float] = collection.mutable.Map("x" -> 0)
-    val mp = new MathParser(vars);
+    val mp = new FloatParser(vars);
 
     val (memFunc, memCache) = org.zhang.lib.memoize(evalStr _)
 
