@@ -31,7 +31,7 @@ class Sep12 extends MyPApplet with Savable { app =>
   override def setup() {
     size(500, 500)
     cam.setCenter(0, 0);
-    cam.setWidth(5);
+    cam.setViewportWidth(5);
     frameRate(30);
   }
 

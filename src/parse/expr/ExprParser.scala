@@ -12,7 +12,9 @@ class ExprParser(
   val vars: collection.mutable.Map[String, Float] = collection.mutable.Map("x" -> 12, "y" -> 9),
 
   val consts:Map[String, Float] = Map(
-    "PI" -> math.Pi.toFloat,
+    "PI" -> math.Pi.toFloat,//todo: fix this shit!
+    "Pi" -> math.Pi.toFloat,
+    "pi" -> math.Pi.toFloat,
     "e" -> math.E.toFloat
   ),
 
@@ -37,10 +39,13 @@ class ExprParser(
   }}
 
   /**
-  * Plus/minus term.
+  * Plus/minus term - terms that go into a plus or minus.
   */
-  def ptTerm: Parser[Expr] = (mdTerm ~ rep("*" ~ mdTerm | "/" ~ mdTerm)) ^^ { case start~rest => {
-    rest.foldLeft(start){ case (accum, "*"~num) => Mul(accum, num); case (accum, "/"~num) => Div(accum, num); }
+  def ptTerm: Parser[Expr] = (mdTerm ~ rep(oneTermMultable | ("*" ~ mdTerm) | ("/" ~ mdTerm))) ^^ { case start~rest => {
+    rest.foldLeft(start) {
+      case (accum, num:Expr) => Mul(accum, num);
+      case (accum, "*"~num) if num.isInstanceOf[Expr] => Mul(accum, num.asInstanceOf[Expr]);
+      case (accum, "/"~num) if num.isInstanceOf[Expr] => Div(accum, num.asInstanceOf[Expr]); }
   }}
 
   /**
@@ -51,6 +56,8 @@ class ExprParser(
     }
   }
 
+  private def oneTermMultable: Parser[Expr] = functionApplication | symbol | paren
+
   /**
   * exponent term.
   */
@@ -59,11 +66,13 @@ class ExprParser(
       case None~e       => e
     }
 
-    def functionApplication: Parser[Expr] = (mapParser(funcs) ~ ("(" ~> expr <~ ")")) ^^ {
+    def paren: Parser[Expr] = ("(" ~> expr <~ ")")
+
+    def functionApplication: Parser[Expr] = (mapParser(funcs) ~ paren) ^^ {
       case funcName ~ expr => UDFunc(funcName, expr)
     }
 
-    def num: Parser[Expr] = fp | symbol | ("(" ~> expr <~ ")")
+    def num: Parser[Expr] = fp | symbol | paren
 
       def fp: Parser[Const] = floatingPointNumber ^^ {n => Const(n.toFloat)}
 

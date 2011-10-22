@@ -4,13 +4,15 @@ import java.applet.Applet
 import processing.core.{PConstants, PApplet}
 import org.zhang.lib.misc.Vec2
 import org.zhang.lib.{P5Util, MyPApplet}
-import java.awt.GridLayout
 import controlP5._
 import parse.expr._
 import java.awt.event.{MouseWheelEvent, MouseWheelListener}
 import javax.swing.{BorderFactory, JPanel}
 import javax.swing.border.BevelBorder
+import java.awt.{Dimension, GridLayout}
 
+//Processing's positive y-axis is downwards so we need to negate certain things to make it look like we're
+// going up instead of down. Those that need to be negated are marked with a //negate
 class Sep25 extends Applet {
   import PApplet._, PConstants._;
   import CP5.{ampExpr, freqExpr, phaseExpr}
@@ -38,23 +40,24 @@ class Sep25 extends Applet {
     k;
   }
 
+  lazy val apps = List(CP5, CosGraph, SinGraph, Argand)
+
   override def init() {
     setLayout(new GridLayout(2, 2));
     CP5.init();
     Argand.init(); //argand must be initted before others because the other two might otherwise force the cam instance before it should be forced.
     CosGraph.init();
     SinGraph.init();
-    List(CP5, CosGraph, SinGraph, Argand).foreach(x => add(panelize(x)))
+    apps.foreach(x => add(panelize(x)))
   }
 
-  def drawPhasor(app:MyPApplet, start: Vec2, p: Vec2) = {
-    import app.{line};
-    line(start, p);
-    val offset = p - start;
-    line(p, p - offset.rotate(PI / 8).scale(.2f))
-    line(p, p - offset.rotate(-PI / 8).scale(.2f))
-  }
-  
+
+  override def start() { apps.foreach(_.start()) }
+
+  override def stop() { apps.foreach(_.stop()) }
+
+  override def destroy() { apps.foreach(_.destroy()) }
+
   def phasor(amp: Float, theta: Float) = Vec2.fromPolar(amp, theta);
 
   /*
@@ -268,7 +271,7 @@ class Sep25 extends Applet {
       //draw the big current line
       strokeWeight(6)
       stroke(sinColor)
-      line(toScreen(0, 0), toScreen(0f, totalPhasor().y))
+      line(toScreen(0, 0), toScreen(0f, -totalPhasor().y)) //negate
 
       //draw the graph. Go from x [0, width], transforming it to the corresponding time.
       stroke(darken(sinColor)); noFill();
@@ -278,7 +281,7 @@ class Sep25 extends Applet {
         val timeOffset = (x - width/2) * (scaleRange / width);
         val curTime = time + timeOffset;
         val y = totalPhasor(curTime).y;
-        vertex(x, toScreen(0, y).y); //we only need the Y coordinate in the model space
+        vertex(x, toScreen(0, -y).y); //we only need the Y coordinate in the model space; //negate
       }
       endShape();
     }
@@ -293,12 +296,11 @@ class Sep25 extends Applet {
     override def setup() {
       size(250, 250)
       cam.setCenter(0, 0);
-      cam.setWidth(4);
+      cam.setViewportWidth(4);
       smooth();
       noLoop();
       Thread.currentThread().setName("Argand Thread")
     }
-
 
     override def draw() {
       background(bgColor);
@@ -313,13 +315,20 @@ class Sep25 extends Applet {
       stroke(cosColor);
       line(0, 0, tp.x, 0)
       stroke(sinColor);
-      line(0, 0, 0, tp.y)
+      line(0, 0, 0, -tp.y) //negate
 
       zhang.Methods.strokeWeightModel(this, 2f, cam);
       stroke(vecColor);
       (phasors() foldLeft Vec2()) {
         (accum: Vec2, enum: Vec2) => {
-          drawPhasor(this, accum, accum + enum);
+          def drawPhasor(start: Vec2, p: Vec2) {
+            def line(a:Vec2, b:Vec2) { Argand.line(a.x, -a.y, b.x, -b.y); } //negate
+            line(start, p);
+            val offset = p - start;
+            line(p, p - offset.rotate(PI / 8).scale(.2f))
+            line(p, p - offset.rotate(-PI / 8).scale(.2f))
+          }
+          drawPhasor(accum, accum + enum);
           accum + enum;
         }
       }
@@ -331,4 +340,4 @@ class Sep25 extends Applet {
   }
 
 }
-
+  
