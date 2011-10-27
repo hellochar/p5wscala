@@ -7,25 +7,61 @@
  */
 
 import java.io.{InputStreamReader, BufferedReader, File}
+import javax.swing.JFileChooser
 import org.apache.commons.io.FileUtils
 
 object Script {
   case class ScriptException(s:String) extends Throwable(s)
   implicit def string2se(s:String) = ScriptException(s)
+
+  def dropExtension(s:String) = dropUntilChar(s.reverse, '.').reverse
+
+  def dropUntilChar(s: String, c: Char): String = if(s.contains(c)) s.dropWhile(c != ).tail else s
+
   /**
   * Performs the script action on the given name. Overwrite denotes whether to overwrite files that already exist.
   * This method will return None for success (nothing went wrong), Option[Throwable] for an error
   */
-  def action(name:String, overwrite:Boolean = false):Option[Throwable] = try {
-    val sketchName = name.capitalize //e.g. Jul12
-    println("Script: sketchName is "+sketchName)
+  def runProcess(args:String*)(dir:File = null) = {
+    val pb = new ProcessBuilder(args:_*).redirectErrorStream(true).directory(dir)
 
-    val sourceFile = new File("src\\daily\\" + sketchName + ".scala")
-    val sourceLines = scala.io.Source.fromFile(sourceFile).getLines
+    val process = pb.start(); //runs proguard
+    val inputRedirect = new Thread() {
+      override def run() = try {
+        val in = new BufferedReader(new InputStreamReader(process.getInputStream))
+        var line = ""
+        while (!Thread.currentThread.isInterrupted && {
+          line = in.readLine; line != null
+        }) {
+          println(args(0)+": " + line)
+          Thread.sleep(16);
+        }
+        println(args(0)+" finished!")
+      } catch { case e: InterruptedException => (); case e => e.printStackTrace() }
+    };
+    inputRedirect.start();
+    process.waitFor();
+    inputRedirect.interrupt();
+    process.exitValue()
+  }
+
+  def doScript(file:File, width:String, height:String, overwrite:Boolean = false):Option[Throwable] = try {
+    //The source will be specified relative to Daily\, e.g. src\daily\Jul12.scala
+    if(!file.exists()) return Some(file+" doesn't exist!");
+    if(file.isDirectory) return Some(file+" is a directory!");
+    val sketchName = dropExtension(file.getName).capitalize //this is basically to get rid of the ".scala" extension
+    //e.g. Jul12.scala => alacs.12luJ => .12luJ => 12luJ => Jul12
+    //I would like to specify subpackages for where my scala file lives (e.g. I'd like to place Jul12 in daily\jul\Jul12.scala)
+
+    val codeName = dropExtension(dropUntilChar(file.toString, '\\')).replace("\\", "/") //daily\oct\Oct22 => daily/oct/Oct22
+
+    println("Script: file is "+file+", sketchName is "+sketchName+", codeName is "+codeName)
+
+    val sourceFile = file
     //prereq: do a check and make sure the file is ok.
 
     //1)
-    val sketchFolder = new File("sketches\\"+sketchName.toLowerCase)
+    val sketchFolder = new File("sketches\\"+sketchName.toLowerCase) //Files are specified relative to Daily\
     if(sketchFolder.exists() && !overwrite) return Some(sketchFolder+" exists!")
     sketchFolder.mkdir() //              Daily\sketches\jul12\ now exists
 
@@ -33,12 +69,12 @@ object Script {
 
     //2) (a)
     //This config file will be run from within the sketch folder, so Daily.jar is one level above it
-    val configString = {def config() = {
+    val configString =
 """-injars ..\\Daily.jar
 -outjars """+sketchName+""".jar
 -libraryjars 'C:\Program Files\Java\jdk1.6.0_23\jre\lib\rt.jar'
 
--keep public class daily."""+sketchName+"""
+-keep public class """+codeName.replace("/", ".")+"""
 
 -dontpreverify
 -ignorewarnings
@@ -65,7 +101,7 @@ object Script {
 -keepclassmembers class * {
     ** MODULE$;
 }
-"""}; config()} //writing a def and then calling it so that IntelliJ will let me collapse the code
+"""
 
     val configFile = new File(sketchFolder, "config.pro")
     print("2a) Script: configFile is at "+configFile+". Writing... ")
@@ -74,18 +110,10 @@ object Script {
 
     //2) (b)
     print("2b) Script: Starting process \"proguard.bat @"+configFile+"\"... ");
-    val pb = new ProcessBuilder("proguard.bat", "@"+configFile).redirectErrorStream(true)
-
-    val process = pb.start(); //runs proguard
-    val proguardThread = new Thread(){  override def run() {
-      val in = new BufferedReader(new InputStreamReader(process.getInputStream))
-      var line = ""
-      while({line = in.readLine; line != null}) {
-        println("proguard: "+line)
-      }
-      println("Proguard finished!")
-    }}.start()
-    process.waitFor();
+    runProcess("proguard.bat", "@" + configFile)() match {
+      case e if e != 0 => return Some("Proguard exited errornously with status "+e+"!");
+      case _ => ()
+    }
     println("Done!")
 
     //3
@@ -93,24 +121,26 @@ object Script {
     FileUtils.copyFileToDirectory(sourceFile, sketchFolder);
     println("Done!")
     //4
-    val Size = """size\((\d+), (\d+)\);?""".r //trying to find size(400, 400);
-    val (width:String, height:String) = try {
-      sourceLines.map(_.trim).            //get rid of whitespace
-        filterNot(_.startsWith("//")).    //get rid of comments
-        find(_.startsWith("size(")) match {
-      case Some(string) => string match { case Size(w, h) => (w, h) }
-      } //nonmatching cases will throw matcherror and get catch-ed
-    } catch {
-      case _ => ("500", "500") //default to that
-    }
+//    val Size = """size\((\d+), (\d+)\);?""".r //trying to find size(400, 400);
+//    val (width:String, height:String) = try {
+//      sourceLines.map(_.trim).            //get rid of whitespace
+//        filterNot(_.startsWith("//")).    //get rid of comments
+//        find(_.startsWith("size(")) match {
+//      case Some(string) => string match { case Size(w, h) => (w, h) }
+//      } //nonmatching cases will throw matcherror and get catch-ed
+//    } catch {
+//      case _ => ("500", "500") //default to that
+//    }
 
-    val index = { def html() =
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    val jarName = sketchName+".jar"
+    
+    val index =
+"""<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <!-- charset must remain utf-8 to be handled properly by Processing -->
     <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
 
-    <title>{sketchName + ": Built with Processing"}</title>
+    <title>"""+sketchName + """: Built with Processing</title>
     <LINK REL="stylesheet" HREF="../../sketch.css" TYPE="text/css"/>
   </head>
 
@@ -123,22 +153,21 @@ object Script {
      http://java.sun.com/javase/6/docs/technotes/guides/jweb/deployment_advice.html -->
         <script type="text/javascript" src="http://www.java.com/js/deployJava.js"></script>
         <script type="text/javascript">
-          var attributes =
-          {"{code: 'daily/"+sketchName+"', archive: '"+sketchName+".jar', width: "+width+", height: "+height+", image: 'loading.gif'};"}
-          var parameters = {"{ };"}
+          var attributes ={code: '"""+codeName+"""', archive: '"""+jarName+"""', width: """+width+""", height: """+height+""", image: 'loading.gif'};
+          var parameters = {"java_arguments": "-Djnlp.packEnabled=true" };
           var version = '1.5';
           deployJava.runApplet(attributes, parameters, version);
         </script>
         <noscript>
           <div>
             <!--[if !IE]> -->
-            <object classid={"java:daily/"+sketchName+".class"}
+            <object classid="java:"""+codeName+""".class"
                     type="application/x-java-applet"
-                    archive={sketchName+".jar"}
-                    width={width} height={width}
+                    archive="""+jarName+"""
+                    width="""+width+""" height="""+width+"""
                     standby="Loading Processing software...">
 
-                <param name="archive" value={sketchName+".jar"}/>
+                <param name="archive" value="""+jarName+"""/>
 
                 <param name="mayscript" value="true"/>
                 <param name="scriptable" value="true"/>
@@ -156,11 +185,11 @@ object Script {
    http://java.sun.com/javase/6/webnotes/install/jre/autodownload.html -->
               <object classid="clsid:8AD9C840-044E-11D1-B3E9-00805F499D93"
                       codebase="http://java.sun.com/update/1.6.0/jinstall-6u20-windows-i586.cab"
-                      width={width} height={height}
+                      width="""+width+""" height="""+height+"""
                       standby="Loading Processing software...">
 
-                  <param name="code" value={"daily/" +sketchName}/>
-                  <param name="archive" value={sketchName+".jar"}/>
+                  <param name="code" value="""+codeName+"""/>
+                  <param name="archive" value="""+jarName+"""/>
 
                   <param name="mayscript" value="true"/>
                   <param name="scriptable" value="true"/>
@@ -204,19 +233,26 @@ object Script {
         </div>
       </div>
 
-      <p>Source code:<a href={sketchName+".scala"}>{sketchName}</a></p>
+      <p>Source code:<a href="""+sketchName+""".scala"}>"""+sketchName+"""</a></p>
 
       <p>Built with <a href="http://processing.org" title="Processing.org">Processing</a></p>
       <p><a href="../..">Back to sketches</a></p>
     </div>
   </body>
-</html>;
-      html(); }
+</html>""";
 
     val indexFile = new File(sketchFolder, "index.html")
     print("4) Script: indexFile is at "+indexFile+". Writing... ")
-    FileUtils.write(indexFile, index.toString())
+    FileUtils.write(indexFile, index)
     println("Done!")
+
+    //5) pack200 that shit
+    println("5) Script: pack200 "+jarName+".pack.gz "+jarName)
+    runProcess("pack200", jarName+".pack.gz", jarName)(sketchFolder) match {
+      case e if e != 0 => return Some("Pack200 returned errornously with exit code "+e+"!");
+      case _ => ()
+    }
+    println("Done!");
 
     println("Script finished for "+sketchName+"!")
     None
@@ -225,16 +261,28 @@ object Script {
   }
   
   def main(args:Array[String]) {
-    if(args.length == 0) { println("usage: Script [-obfuscate] argname0 [argname1 argname2 ...]"); exit(1); }
-    if(!"C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily".equals(new File("").getAbsolutePath)) {
-      println("Script is not running from C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily!\nInstead it is at "+new File("").getAbsolutePath+"!")
-      exit(1)
+    import javax.swing._
+
+//    if(args.length == 0) { println("usage: Script [-obfuscate] argname0 [argname1 argname2 ...]"); sys.exit(1); }
+    val path = new File("").getAbsolutePath
+    if(!"C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily".equals(path)) {
+      println("Script is not running from C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily!\nInstead it is at "+path+"!")
+      sys.exit(1)
     }
-    val results = args map(str => (str, action(str, false) match {
-      case Some(t) => t
-      case None => "Success"
-    }))
-    println("Results: "+results.mkString)
+    val file = {val jfc = new JFileChooser(new File("src\\daily").getAbsoluteFile); jfc.showOpenDialog(null) match {
+      case JFileChooser.APPROVE_OPTION => new File(null.asInstanceOf[File], jfc.getSelectedFile.toString.drop(path.length + 1))
+      case _ => sys.exit(2);
+    } }
+    val (width, height) = try {
+      (JOptionPane.showInputDialog("Width?", 500).toInt,
+       JOptionPane.showInputDialog("Height?", 500).toInt)
+    } catch { case e => sys.exit(2) }
+
+    val results = doScript(file, width.toString, height.toString, false)
+    results match {
+      case None => println("Success!");
+      case Some(e) => e.printStackTrace()
+    }
   }
 
 }
