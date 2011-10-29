@@ -13,7 +13,8 @@ import scala.util.parsing.combinator.JavaTokenParsers
 import javax.swing.JOptionPane
 import controlP5._
 import zhang.{Methods, Camera}
-import org.zhang.lib.misc.{TravList, Vec2}
+import org.zhang.geom.Vec2
+import org.zhang.lib.TravList
 
 class Jul12 extends PApplet with NameApplet {
   import PConstants._; import PApplet._

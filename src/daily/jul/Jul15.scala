@@ -9,7 +9,7 @@ package jul
  */
 import processing.core._
 import org.zhang.lib.world.HashWorld
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.particle.Particle
 import org.zhang.lib.{P5Util, WorldApplet}
 import geomerative.{RG, RPoint}

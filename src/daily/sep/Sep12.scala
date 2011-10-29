@@ -10,7 +10,7 @@ package sep
 import processing.core._
 import org.zhang.lib.MyPApplet
 import controlP5.ControlP5
-import parse.float.{FloatParser, VariableFloatParser}
+import org.zhang.parse.float.{FloatParser, VariableFloatParser}
 
 class Sep12 extends MyPApplet with Savable { app =>
   import PApplet._; import PConstants._;

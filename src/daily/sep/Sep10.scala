@@ -6,7 +6,7 @@ import processing.core._
 import processing.opengl._
 import peasy.{PeasyDragHandler, PeasyCam}
 import controlP5.{Controller, ControllerInterface, ControlP5}
-import org.zhang.lib.misc.{LorenzAttractor, Vec3}
+import org.zhang.geom.{LorenzAttractor, Vec3}
 
 class Sep10 extends MyPApplet with Savable { app =>
 

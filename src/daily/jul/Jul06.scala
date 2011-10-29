@@ -9,7 +9,7 @@ package jul
  */
 import processing.core._
 import org.zhang.lib.world.particle.Particle
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.particle.Particle
 import org.zhang.lib.world.{TimedLife, BoundedWorld, HashWorld}
 import org.zhang.lib.{WorldApplet, P5Util}

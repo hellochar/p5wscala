@@ -1,7 +1,7 @@
 import java.awt.event.{MouseWheelEvent, MouseWheelListener}
 import javax.swing.SwingUtilities
 import org.zhang.lib.HasMV
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import processing.core.PApplet._
 import processing.core.PConstants._
 import processing.core.{PImage, PGraphics, PVector, PApplet}

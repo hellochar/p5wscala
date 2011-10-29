@@ -9,7 +9,7 @@ package daily.jul
 import processing.core._
 import org.zhang.lib.WorldApplet
 import org.zhang.lib.world.HashWorld
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.particle.Particle
 
 class Jul18 extends WorldApplet {

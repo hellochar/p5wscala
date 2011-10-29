@@ -8,7 +8,7 @@ package daily.jul
  */
 import processing.core._
 import org.zhang.lib.world.particle.Particle
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.{TimedLife, HashWorld}
 import scala.util.Random
 import org.zhang.lib.{HasMV, P5Util, WorldApplet}

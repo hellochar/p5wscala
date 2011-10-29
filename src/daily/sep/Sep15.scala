@@ -9,7 +9,7 @@ package sep
  */
 import processing.core._
 import org.zhang.lib.MyPApplet
-import org.zhang.lib.misc.{LorenzAttractor, Vec3}
+import org.zhang.geom.{LorenzAttractor, Vec3}
 
 class Sep15 extends MyPApplet with Savable {
   import PApplet._; import PConstants._; 

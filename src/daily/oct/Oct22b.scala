@@ -76,17 +76,23 @@ class Oct22b extends MyPApplet with Savable {
     }
   }
 
+  lazy val pic = loadImage("050.JPG");
+
   override def draw() {
     background(0);
 //    jmyron.sensitivity(10)
 //    jmyron.adaptivity(2)
-    jmyron.update()
-    val img = jmyron.image();
-//    val img = jmyron.differenceImage()
+//    jmyron.update()
+//    val img = jmyron.image();
+//    loadPixels();
+//    arrayCopy(img, pixels)
+//    updatePixels()
+
+    copy(pic, 0, 0, pic.width, pic.height, 0, 0, width, height)
     loadPixels();
-    arrayCopy(img, pixels)
-    updatePixels()
-    val s = myAsciier.ascii(img, width)
+
+    updatePixels();
+    val s = myAsciier.ascii(pixels, width)
     java.awt.Toolkit.getDefaultToolkit.getSystemClipboard.setContents(new StringSelection(s), null)
     for(x <- 0 until 10) println()
     println(s)

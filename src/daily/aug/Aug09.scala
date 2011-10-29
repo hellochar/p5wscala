@@ -8,7 +8,7 @@ package daily
  */
 import processing.core._
 import peasy.PeasyCam
-import org.zhang.lib.misc.TravList
+import org.zhang.lib.TravList
 import org.zhang.lib.Tree
 
 class Aug09 extends PApplet {

@@ -6,7 +6,8 @@ import peasy.PeasyCam
 import org.zhang.lib.MyPApplet
 import zhang.Methods
 import toxi.color.{ColorList, ColorGradient, ReadonlyTColor, TColor}
-import org.zhang.lib.misc.{Vec3, Vec2, TravList}
+import org.zhang.geom.{Vec3, Vec2}
+import org.zhang.lib.TravList
 
 /**
  * Created by IntelliJ IDEA.

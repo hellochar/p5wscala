@@ -8,7 +8,7 @@ package daily.jul
  */
 import processing.core._
 import org.zhang.lib._
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.{P5Util, HasMV, WorldApplet}
 import org.zhang.lib.world.{HashWorld, BoundedWorld}
 import world.action.Action

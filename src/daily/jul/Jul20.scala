@@ -8,7 +8,7 @@ package jul
  * Time: 8:53 PM
  */
 import processing.core._
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import zhang.Camera
 
 class Jul20 extends NameApplet {

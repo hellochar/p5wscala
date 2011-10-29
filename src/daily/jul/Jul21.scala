@@ -8,7 +8,7 @@ package jul
  * Time: 2:07 AM
  */
 import processing.core._
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 
 class Jul21 extends NameApplet {
   import PApplet._; import PConstants._;

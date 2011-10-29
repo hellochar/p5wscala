@@ -10,7 +10,7 @@ import processing.core._
 import JMyron.JMyron
 import processing.core.PApplet._
 import zhang.Methods
-import org.zhang.lib.misc.TravList
+import org.zhang.lib.TravList
 
 class Jun27 extends PApplet {
   import PApplet._; import PConstants._;

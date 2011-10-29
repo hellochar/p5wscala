@@ -10,7 +10,7 @@ package jun
 import processing.core._
 import org.zhang.lib.world.particle.Particle
 import zhang.Methods
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.{BoundedWorld, HashWorld}
 import geomerative.{RPoint, RShape}
 import org.zhang.lib.{HasCamera, P5Util, WorldApplet}

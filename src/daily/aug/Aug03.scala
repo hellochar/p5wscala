@@ -10,8 +10,8 @@ package daily.aug
 import processing.core._
 import toxi.color.RGBDistanceProxy
 import zhang.Methods
-import org.zhang.lib.misc.{TravList, Vec2}
-import org.zhang.lib.TogglePauseOnKey
+import org.zhang.geom.Vec2
+import org.zhang.lib._
 import controlP5.{ControlEvent, ControlListener, ControlP5}
 
 class Aug03 extends PApplet {

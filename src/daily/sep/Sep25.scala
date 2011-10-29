@@ -2,14 +2,14 @@ package daily.sep
 
 import java.applet.Applet
 import processing.core.{PConstants, PApplet}
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.{P5Util, MyPApplet}
 import controlP5._
-import parse.expr._
 import java.awt.event.{MouseWheelEvent, MouseWheelListener}
 import javax.swing.{BorderFactory, JPanel}
 import javax.swing.border.BevelBorder
 import java.awt.{Dimension, GridLayout}
+import org.zhang.parse.expr.{Expr, ExprParser}
 
 //Processing's positive y-axis is downwards so we need to negate certain things to make it look like we're
 // going up instead of down. Those that need to be negated are marked with a //negate

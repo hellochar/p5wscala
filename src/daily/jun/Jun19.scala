@@ -8,7 +8,7 @@ package daily.jun
  */
 import processing.core._
 import org.zhang.lib.world.particle.Particle
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.action.{Action, RunawayAction, ClosestParticleAction}
 import org.zhang.lib.{HasCamera, P5Util, WorldApplet}
 import org.zhang.lib.world._

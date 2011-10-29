@@ -3,7 +3,7 @@ package jul
 
 import processing.core._
 import org.zhang.lib.{WorldApplet, MyPApplet}
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.{Entity, Velocity, HashWorld}
 
 /**

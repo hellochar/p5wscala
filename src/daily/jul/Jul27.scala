@@ -8,7 +8,7 @@ package jul
  * Time: 1:52 AM
  */
 import processing.core._
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.P5Util
 import zhang.Methods
 

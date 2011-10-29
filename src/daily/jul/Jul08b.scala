@@ -9,7 +9,8 @@ package daily.jul
 import processing.core._
 import toxi.color.{TColor, ColorGradient}
 import remixlab.proscene._
-import org.zhang.lib.misc.{TravList, Vec2}
+import org.zhang.geom.Vec2
+import org.zhang.lib.TravList
 import java.awt.event.KeyEvent
 import zhang.MultiKeyListener
 

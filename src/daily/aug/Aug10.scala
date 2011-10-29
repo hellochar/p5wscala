@@ -10,7 +10,7 @@ package aug
 import processing.core._
 import org.zhang.lib.MyPApplet
 import peasy.PeasyCam
-import org.zhang.lib.misc.Vec3
+import org.zhang.geom.Vec3
 
 class Aug10 extends MyPApplet with Savable {
   import PApplet._; import PConstants._; 

@@ -8,7 +8,7 @@ package sep
  * Time: 11:42 PM
  */
 import processing.core._
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.{HasMV, MyPApplet}
 import collection.mutable.{BufferProxy, Buffer, BufferLike, ArrayLike}
 

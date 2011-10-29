@@ -8,7 +8,7 @@ package daily.jun
  * To change this template use File | Settings | File Templates.
  */
 import processing.core._
-import org.zhang.lib.misc._
+import org.zhang.geom._
 import org.zhang.lib.P5Util
 
 class Jun12c extends PApplet {

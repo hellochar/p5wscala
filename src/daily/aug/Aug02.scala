@@ -7,7 +7,7 @@ package daily.aug
  * Time: 1:04 AM
  */
 import processing.core._
-import org.zhang.lib.misc.Vec2
+import org.zhang.geom.Vec2
 import org.zhang.lib.world.action.Action
 import org.zhang.lib.world.particle.Particle
 import org.zhang.lib.{P5Util, WorldApplet}
