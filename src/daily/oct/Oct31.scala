@@ -11,9 +11,10 @@ import processing.core._
 import org.zhang.lib.MyPApplet
 import peasy.PeasyCam
 import zhang.Methods
-import org.zhang.geom.Vec3
+import org.zhang.geom._
 import toxi.geom.Vec3D
 
+//todo: fix a NaN error that keeps popping up
 class Oct31 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI {
   import PApplet._; import PConstants._;
   implicit def zhang2toxi(z:Vec3) = new Vec3D(z.x, z.y, z.z)
@@ -23,9 +24,7 @@ class Oct31 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI
 
   def dt = .1f
 
-  //todo: put in mypapplet
   def randomColor = color(random(255), random(255), random(255))
-
   lazy val cam = new PeasyCam(this, 100)
   val things = (0 until 100) map (_ => new Thing(randomColor))
   override def setup() {
@@ -33,7 +32,7 @@ class Oct31 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI
     cam;
   }
 
-  def randomVector = Vec3.fromSpherical(100, random(TWO_PI), random(-PI/2, PI/2))
+  def randomVector = Vec3.random * 100
   var nanned = false
 
   private var idx = 0;
@@ -53,7 +52,7 @@ class Oct31 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI
 
     def chase(want:Vec3) {
       val dist = distS(loc, want) * .1f;
-      loc = move(loc, (loc cross want) ofMag dist);
+      loc = loc.rotate((loc cross want), dist / loc.mag);
       tail = (loc +: tail) take 50
     }
 
@@ -64,12 +63,12 @@ class Oct31 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI
       val locs = others map (_.loc)
       val cross = locs map (loc cross)
       val newLocs = for(x <- cross) yield {
-        val v = move(loc, x.normalize)
+        val v = loc.rotate(x, 1 / loc.mag)
         if(v.x.isNaN && !nanned) {
           System.out.println("NaNNed!")
           println(this)
           println("x: "+x+", x.normalize: "+x.normalize+", loc: "+loc)
-          move(loc, x.normalize);
+          loc.rotate(x, 1 / loc.mag);
         };
         v
       }
@@ -106,7 +105,7 @@ class Oct31 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI
     sphereDetail(10)
     things foreach (_.draw())
 //    println("Frame "+frameCount+"\n"+things.mkString("\n")+"\n")
-    things foreach (_.repel())
+//    things foreach (_.repel())
 
     getIntersect(mouseX, mouseY, 100) match {
       case Some(intersect) => {

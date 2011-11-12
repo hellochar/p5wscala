@@ -70,7 +70,7 @@ class Aug02 extends PApplet with WorldApplet {
     size(500, 500)
     colorMode(HSB)
     world ++= (0 until width).map(x => (0 until height).map(y => {
-      val k = new Cell(x, y, Vec2(x, y).invR2(5, Vec2(width/2, height/2)))
+      val k = new Cell(x, y, Vec2.invR2(Vec2(x, y), Vec2(width/2, height/2)) * 5)
       cells(y*width+x) = k;
       k})).flatten
 //    world ++= (0 until 100) map(_ => new MyParticle())

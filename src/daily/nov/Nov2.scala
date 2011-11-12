@@ -8,16 +8,16 @@ package nov
  * Time: 11:52 AM
  */
 import processing.core._
-import org.zhang.lib.MyPApplet
 import peasy.PeasyCam
 import zhang.Methods
-import org.zhang.geom.Vec3
+import org.zhang.lib.{P5Util, MyPApplet}
+import org.zhang.geom.{Vec2, Vec3}
 
 class Nov2 extends MyPApplet with Savable with SphereUtils {
   import PApplet._; import PConstants._;
 
-  implicit def zhang2pv(z:Vec3) = new PVector(z.x, z.y, z.z)
-  implicit def pv2zhang(p:PVector) = Vec3(p.x, p.y, p.z)
+//  implicit def zhang2pv(z:Vec3) = new PVector(z.x, z.y, z.z)
+//  implicit def pv2zhang(p:PVector) = Vec3(p.x, p.y, p.z)
 
   lazy val cam = new PeasyCam(this, 100);
   override def setup() {
@@ -31,7 +31,8 @@ class Nov2 extends MyPApplet with Savable with SphereUtils {
     private val tail = new SizedQueue((log(low) / log(drop)).toInt, loc)
 
     def run() {
-      loc = rotate(loc, axis, PI/30)
+//      loc = move(loc, axis, PI/30)
+      loc = loc.rotate(axis, PI/30)
 //      if(frameCount % 15 == 0)
         tail push loc
     }
@@ -50,7 +51,7 @@ class Nov2 extends MyPApplet with Savable with SphereUtils {
     }
   }
 
-  def axis = Vec3.fromSpherical(1, millis / 2000f, (millis / 4350f) % PI)
+  def axis = Vec3.fromSpherical(1, millis / 2000f, (millis / 4350f) % PI) //guaranteed to be of unit length
   private val points = (0 until 1).map(_ => new Point(Vec3.random ofMag random(1, 100)))
 
   override def draw() {
@@ -65,12 +66,6 @@ class Nov2 extends MyPApplet with Savable with SphereUtils {
     pollSave("")
   }
 
-  /**
-   * axis must be the unit vector. This performs Rodriguez's rotation formula
-   */
-  def rotate(v:Vec3, axis:Vec3, theta:Float) =
-    v * cos(theta) + (axis cross v) * sin(theta) + axis * (axis.dot(v) * (1 - cos(theta)))
-  
   override def keyPressed() {
     super.keyPressed();
   }

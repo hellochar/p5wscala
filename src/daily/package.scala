@@ -67,7 +67,12 @@ package object daily {
     }
 
     def pollSave(prefix:String = "") {
-      if(saving && !trulyOnline) saveFrame(prefix+this.getClass.getSimpleName.filter('$'!=)+"-####.png")
+      if(saving && !trulyOnline) {
+        val name = getClass.getName.drop(6) //daily.nov.Nov11 -> nov.Nov11
+        val begin = "C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily\\out\\"+name.replace(".", "\\").toLowerCase+"-out\\"
+        val path = begin+prefix+this.getClass.getSimpleName.filter('$'!=)+"-"+nf(frameCount, 4)+".png"
+        g.save(path)
+      }
     }
 
     abstract override def keyPressed() {
@@ -76,69 +81,20 @@ package object daily {
     }
   }
 
-
+  /**
+   * This class provides methods to draw geometry in spherical coordinates such as great circles and small circles.
+   */
   trait SphereUtils extends MyPApplet {
-    import PApplet._
-
-    /**
-     * Precondition: norm is orthogonal to v.<br />
-     * We imagine the great circle described by the norm vector. v will
-     * be on the great circle. This method will return a Vec3, on the great circle, a distance norm.mag away from
-     * v (using spherical distance, not euclidean). Interpret the magnitude of v to be the radius of the sphere. <br /><br />
-     * This method is the spherical equivalent to adding a velocity vector to a location vector; the location vector is v, and the
-     * velocity vector has magnitude |norm| and direction perpendicular to norm.
-     * @param v Vector on the great circle
-     * @param norm Vector describing the great circle
-     * @return A Vec3 also on the great circle a distance norm.mag away from v, or v itself if norm is the zero vector.
-     */
-    def move(v: Vec3, norm: Vec3) = if(norm.isZero || v.isZero) v else {
-        //    val a = rotateAtoBMat(Vec3.X, v); //so we can treat the X axis as v.
-        //    a.apply(rotateAtoBMat(transformed(Vec3.Z, a), norm));
-        val rot = rotatePlaneAtoBMat(Vec3.X, Vec3.Z, v, norm);
-        val theta = norm.mag / v.mag;
-        val nx = Vec2.fromPolar(v.mag, theta).xy
-        //if(!a.invert()) sys.error("a didn't invert! it is "+a.get(null))
-        //run nx through a and return it
-        transformed(nx, rot)
-      }
-
-    /**
-     * Returns the spherical distance between v1 and v2; the sphere is assumed to have a radius |v1|. This is the
-     * spherical analogue to the Euclidean distance (v2 - v1).mag
-     * @param v1 One point on the sphere
-     * @param v2 Second point on the sphere.
-     */
-    def distS(v1:Vec3, v2:Vec3) = v1.mag * (v1 angleBetween v2)
-
-    /**
-     * Precondition: vX and vY are linearly independent, v is on the plane spanned by vX and vY, vX and vY are orthogonal.
-     * Given a vector v on a plane spanned by vX and vY, this method decomposes that vector into its vX and vY components,
-     * returning the value in a Vec2.
-     */
-    def to2D(v:Vec3, vX:Vec3, vY:Vec3) = {
-      if(abs(vX dot vY) > .01f) sys.error("vX not ortho to vY! "+vX+", "+vY+", "+vX.dot(vY))
-      if(!v.proj(vX cross vY).withinBounds(.01f)) sys.error("v is not on the plane spanned by vX, vY! "+vX+", "+vY+", "+v.proj(vX cross vY))
-      //since they're orthogonal, we just have to do a projection
-      //v = x1 * v1 + x2 * v2; v . v1 = x1 * v1 . v1 + 0 => x1 = v . v1 / (v1 . v1)
-      Vec2(v.dot(vX) / vX.mag2, v.dot(vY)/ vY.mag2)
-    }
 
     /**
      * Draw the great circle segment that connects h1 and h2; the radius of the sphere is assumed to be
-     * v1.mag
+     * v1.mag.
      * @param h1 One endpoint of the segment
      * @param h2 Other endpoint of the segment
      */
     def gcArc(h1: Vec3, h2: Vec3) {
       pushMatrix();
-
-      //    val zToNorm = rotateAtoBMat(Vec3.Z, h1 cross h2)
-      //    val xtoh1 = rotateAtoBMat(transformed(Vec3.X, zToNorm), h1);
-      //    xtoh1.apply(zToNorm);
-      //    applyMatrix(xtoh1); //xtoh1 correctly transforms vectors.
-
-      applyMatrix(rotatePlaneAtoBMat(Vec3.X, Vec3.Z, h1, h1 cross h2))
-
+      applyMatrix(org.zhang.lib.P5Util.rotatePlaneAtoBMat(Vec3.X, Vec3.Z, h1, h1 cross h2)) //todo: what if h1 and h2 are opposite? the cross becomes zero.
       arc(0, 0, h1.mag, h1.mag, 0, h1 angleBetween h2);
       popMatrix();
     }
@@ -149,7 +105,7 @@ package object daily {
      * @param h2 Another vector on the great circle
      */
     def greatCircle(h1: Vec3, h2: Vec3) {
-      greatCircle((h1 cross h2), h1.mag)
+      greatCircle((h1 cross h2), h1.mag) //todo: what if h1 and h2 are linearly dependent?
     }
 
     /**
@@ -164,7 +120,7 @@ package object daily {
      * @param norm Vector pointing normal to the plane.
      * @param rad Radius of the sphere.
      */
-    def greatCircle(norm: Vec3, rad:Float) {
+    def greatCircle(norm: Vec3, rad:Float) { //todo: what if norm is the zero vector?
       pushMatrix()
       rotateAtoB(Vec3.Z, norm)
       ellipse(0, 0, 2 * rad, 2 * rad)
@@ -198,6 +154,9 @@ package object daily {
     }
   }
 
+  /**
+   * This trait provides a method to associate a position on the screen with a position on the surface of a sphere.
+   */
   trait SphereSurfaceUI extends MyPApplet {
     import toxi.geom.{Vec3D, Sphere, Ray3D}
     import processing.core.PApplet._;

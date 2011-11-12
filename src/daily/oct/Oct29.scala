@@ -12,7 +12,7 @@ import processing.core._
 import org.zhang.lib.MyPApplet
 import peasy.PeasyCam
 import zhang.Methods
-import org.zhang.geom.{Vec2, Vec3}
+import org.zhang.geom.Vec3
 
 class Oct29 extends MyPApplet with Savable with SphereUtils {
 
@@ -26,8 +26,8 @@ class Oct29 extends MyPApplet with Savable with SphereUtils {
   }
 
   var h1 = Vec3.fromSpherical(100, random(TWO_PI), random(-PI / 2, PI / 2));
-  //  val h2 = Vec3.fromSpherical(100, millis / 1250f, millis / 3000f);
-  var h2 = Vec3.fromSpherical(100, random(TWO_PI), random(-PI / 2, PI / 2));
+  def h2 = Vec3.fromSpherical(100, millis / 1250f, millis / 3000f);
+//  var h2 = Vec3.fromSpherical(100, random(TWO_PI), random(-PI / 2, PI / 2));
   var norm = (h1 cross h2) ofMag 100
 
   override def draw() {
@@ -36,32 +36,24 @@ class Oct29 extends MyPApplet with Savable with SphereUtils {
 
     Methods.drawAxes(g, 20)
 
-    h1 = move(h1, norm ofMag 1)
+    h1 = h1.rotate(norm normalize, 1 / h1.mag)
 
     stroke(255, 0, 0);
     line(h1)
-    //    stroke(0, 255, 0); line(h2);
-    //    stroke(0, 0, 255); gcArc(h1, h2)
+    stroke(0, 255, 0); line(h2);
+    stroke(0, 0, 255); gcArc(h1, h2)
     stroke(0, 255, 0);
     line(norm)
 
-    //    stroke(255, 255, 0)
-    //    greatCircle(h1, h2)
-    //    greatCircle(norm ofMag 110)
+    stroke(255, 255, 0)
+    greatCircle(h1, h2)
+    greatCircle(norm ofMag 110)
 
-    //    stroke(0);
-    //    gcArc(h1, h2)
+    stroke(0);
+    gcArc(h1, h2)
 
-    //    stroke(0, 0, 255);
-    //    smallCircle(h2, h2.mag * (millis / 1000f % TWO_PI))
-
-    //    val moved = move(h1, norm ofMag 1)
-    //    stroke(0, 0, 255)
-    //    line(moved)
-    //    stroke(255, 255, 0);
-    //    gcArc(h1, moved)
-    //    greatCircle(norm ofMag 90)
-    //    h1 = moved;
+    stroke(0, 0, 255);
+    smallCircle(h2, h2.mag * (millis / 1000f % TWO_PI))
 
     pollSave()
   }

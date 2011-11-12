@@ -20,7 +20,7 @@ class Jun19 extends WorldApplet with HasCamera {
   //TowardsAttractorAction
   private sealed class TAA(pow:Float) extends Action {
     def apply(v1: Particle) = {
-      def forceFor(pos:Vec2) = v1.loc.invR2(pow, pos)
+      def forceFor(pos:Vec2) = Vec2.invR2(v1.loc, pos) * pow
       val f = (v1 match {
         case a: Attractor => world.ofType(classOf[Attractor]) - a
         case _ => world.ofType(classOf[Attractor])
