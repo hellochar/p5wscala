@@ -51,12 +51,13 @@ class Nov9 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI 
     }
   }
 
-  def randomColor = color(random(255), random(255), random(255))
-  var balls = (0 until 2000).map(x => new Ball(Vec2.fromPolar(100, x * TWO_PI / 2000).xy));
-  lazy val cam = new PeasyCam(this, 100);
+  val NUMBER = 1200
+
+  var balls = (0 until NUMBER).map(x => new Ball(Vec2.fromPolar(100, x * TWO_PI / NUMBER).xy));
+  lazy val cam = new PeasyCam(this, 300);
 
   def reset() {
-    balls = (0 until 2000).map(x => new Ball(Vec2.fromPolar(100, x * TWO_PI / 2000).xy));
+    balls = (0 until NUMBER).map(x => new Ball(Vec2.fromPolar(100, x * TWO_PI / NUMBER).xy));
   }
 
   val mkl = new zhang.MultiKeyListener();
@@ -69,20 +70,37 @@ class Nov9 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI 
 
   override def draw() {
     background(64);
+    Methods.drawAxes(g, 200)
+
     sphereDetail(30)
 //    lights();
-    noStroke(); fill(255); sphere(100);
-    if(mkl.isPressed(KeyEvent.VK_Q) || mkl.isPressed(KeyEvent.VK_W)) {
+    noStroke(); fill(255); sphere(90);
+    val q = mkl.isPressed(KeyEvent.VK_Q)
+    if(q || mkl.isPressed(KeyEvent.VK_W)) {
       getIntersect(mouseX, mouseY, 100).foreach(p => {
-          strokeWeight(5); stroke(0);
-          smallCircle(p, 15);
-          balls foreach (_.run(p, if(mkl.isPressed(KeyEvent.VK_Q)) 15 else -15 ))
+          strokeWeight(5); stroke(if(q) color(255, 0, 0) else color(0, 255, 0));
+          smallCircle(p, 10);
+          balls foreach (_.run(p, if(q) 15 else -15 ))
         })
     }
     balls foreach (_.update())
-    sphereDetail(3)
-    balls foreach (_.draw())
+
+    strokeWeight(1);
+
+    stroke(0); noFill();
+    //todo: fix gcArc
+//    balls.map(_.loc).sliding(2).map(_.toList).foreach(x => gcArc(x(0), x(1)))
+//    gcArc()
+//    greatCircle(Vec3.X * 102, Vec3.Z * 102)
+
+    balls.map(_.loc).sliding(2).map(_.toList).foreach(x => line(x(0), x(1)))
+//    lines3(balls.map(_.loc))
+
+    //----------draw points---------
+//    sphereDetail(3)
+//    balls foreach (_.draw())
     println(frameRate)
+    pollSave()
   }
 
   override def keyPressed() {

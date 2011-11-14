@@ -41,7 +41,6 @@ class Oct29 extends MyPApplet with Savable with SphereUtils {
     stroke(255, 0, 0);
     line(h1)
     stroke(0, 255, 0); line(h2);
-    stroke(0, 0, 255); gcArc(h1, h2)
     stroke(0, 255, 0);
     line(norm)
 

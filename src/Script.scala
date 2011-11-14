@@ -233,7 +233,7 @@ object Script {
         </div>
       </div>
 
-      <p>Source code:<a href="""+sketchName+""".scala"}>"""+sketchName+"""</a></p>
+      <p>Source code:<a href="""+sketchName+""".scala>"""+sketchName+"""</a></p>
 
       <p>Built with <a href="http://processing.org" title="Processing.org">Processing</a></p>
       <p><a href="../..">Back to sketches</a></p>

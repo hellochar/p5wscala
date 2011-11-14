@@ -88,14 +88,14 @@ package object daily {
 
     /**
      * Draw the great circle segment that connects h1 and h2; the radius of the sphere is assumed to be
-     * v1.mag.
+     * h1.mag.
      * @param h1 One endpoint of the segment
      * @param h2 Other endpoint of the segment
      */
     def gcArc(h1: Vec3, h2: Vec3) {
       pushMatrix();
       applyMatrix(org.zhang.lib.P5Util.rotatePlaneAtoBMat(Vec3.X, Vec3.Z, h1, h1 cross h2)) //todo: what if h1 and h2 are opposite? the cross becomes zero.
-      arc(0, 0, h1.mag, h1.mag, 0, h1 angleBetween h2);
+      arc(0, 0, h1.mag * 2, h1.mag * 2, 0, h1 angleBetween h2);
       popMatrix();
     }
 
