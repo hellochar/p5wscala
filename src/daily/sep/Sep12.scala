@@ -8,9 +8,9 @@ package sep
  * Time: 10:16 PM
  */
 import processing.core._
-import org.zhang.lib.MyPApplet
 import controlP5.ControlP5
 import org.zhang.parse.float.{FloatParser, VariableFloatParser}
+import org.zhang.lib.{CP5Util, MyPApplet}
 
 class Sep12 extends MyPApplet with Savable { app =>
   import PApplet._; import PConstants._;
@@ -25,7 +25,7 @@ class Sep12 extends MyPApplet with Savable { app =>
 
   object cam extends zhang.Camera(this) {
     override def uiHandle() {
-      if(!cp5HasFocus(cp5)) super.uiHandle();
+      if(!CP5Util.cp5HasFocus(cp5)) super.uiHandle();
     }
   }
 
@@ -96,7 +96,7 @@ class Sep12 extends MyPApplet with Savable { app =>
   
   
   override def keyPressed() {
-    if(!cp5HasFocus(cp5))
+    if(!CP5Util.cp5HasFocus(cp5))
       super.keyPressed();
   }
 }

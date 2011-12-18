@@ -24,7 +24,6 @@ class Oct31 extends MyPApplet with Savable with SphereUtils with SphereSurfaceUI
 
   def dt = .1f
 
-  def randomColor = color(random(255), random(255), random(255))
   lazy val cam = new PeasyCam(this, 100)
   val things = (0 until 100) map (_ => new Thing(randomColor))
   override def setup() {
