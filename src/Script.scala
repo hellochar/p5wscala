@@ -164,7 +164,7 @@ object Script {
             <object classid="java:"""+codeName+""".class"
                     type="application/x-java-applet"
                     archive="""+jarName+"""
-                    width="""+width+""" height="""+width+"""
+                    width="""+width+""" height="""+height+"""
                     standby="Loading Processing software...">
 
                 <param name="archive" value="""+jarName+"""/>
@@ -265,10 +265,10 @@ object Script {
 
 //    if(args.length == 0) { println("usage: Script [-obfuscate] argname0 [argname1 argname2 ...]"); sys.exit(1); }
     val path = new File("").getAbsolutePath
-    if(!"C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily".equals(path)) {
-      println("Script is not running from C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily!\nInstead it is at "+path+"!")
-      sys.exit(1)
-    }
+//    if(!"C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily".equals(path)) {
+//      println("Script is not running from C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily!\nInstead it is at "+path+"!")
+//      sys.exit(1)
+//    }
     val file = {val jfc = new JFileChooser(new File("src\\daily").getAbsoluteFile); jfc.showOpenDialog(null) match {
       case JFileChooser.APPROVE_OPTION => new File(null.asInstanceOf[File], jfc.getSelectedFile.toString.drop(path.length + 1))
       case _ => sys.exit(2);

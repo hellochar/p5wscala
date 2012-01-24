@@ -105,7 +105,8 @@ class Dec01 extends MyPApplet with Savable {
     println(dataPath("wlist_match10.txt"));
     {
       var i = 0;
-      loadStrings("wlist_match10.txt") foreach (s => {chain.train(s); i += 1; println("Trained "+i+"("+s+")")})
+//      loadStrings("wlist_match10.txt") foreach (s => {chain.train(s); i += 1; println("Trained "+i+"("+s+")")})
+      loadStrings("wlist_match10.txt") foreach (chain.train(_))
     }
 
     word = generateRandomWord()
