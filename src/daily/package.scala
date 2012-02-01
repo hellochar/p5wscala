@@ -8,7 +8,7 @@ import processing.core.PConstants._
 import processing.core.{PVector, PMatrix3D, PApplet}
 
 //in file daily/package.scala
-package object daily {
+
   val FONTS_DIR = "C:\\Windows\\Fonts\\"
   def findFont(name:String):String = FONTS_DIR+name
 //    List(name, name.toUpperCase, name.toLowerCase, name.capitalize).foldLeft(null)((ret, name) =>
