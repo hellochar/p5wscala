@@ -10,9 +10,10 @@ package daily
 
 import processing.core._
 import org.zhang.lib.MyPApplet
-import org.zhang.geom.Vec2
+import peasy.PeasyCam
+import org.zhang.geom.{Vec3, Vec2}
 
-class Jan30 extends MyPApplet with Savable {
+class Jan30 extends MyPApplet with Savable { app =>
 
   import PApplet._;
   import PConstants._;
@@ -38,12 +39,14 @@ class Jan30 extends MyPApplet with Savable {
 
   override def setup() {
     size(500, 500)
+    PApplet.runSketch(Array("daily.Jan30.Draw3D"), Draw3D);
   }
 
   def curBez = bezier(pts) _
+  def sampledBez = Range.Double(0, 1, .01) flatMap {x => curBez(x.toFloat)}
 
   def drawBezier() {
-    lines2(Range.Double(0, 1, .01) flatMap {x => curBez(x.toFloat)})
+    lines2(sampledBez)
   }
 
   var pts = Seq[Mutable[Vec2]]()
@@ -82,5 +85,27 @@ class Jan30 extends MyPApplet with Savable {
 
   override def keyPressed() {
     super.keyPressed(); //pressing space toggles a boolean variable to save the screen
+  }
+
+  private object Draw3D extends MyPApplet {
+    lazy val cam = new PeasyCam(this, 500);
+    override def setup() {
+      size(500, 500, P3D);
+      cam;
+    }
+
+    override def draw() {
+      background(255); noStroke(); fill(220); lights();
+      zhang.Methods.drawAxes(g, 100);
+      val bezNow = sampledBez.map(v => Vec2(v.x, app.height - v.y));
+      (0 to 40).map(x => map(x.toFloat, 0, 40, 0, TWO_PI)).sliding(2).foreach { x =>
+        beginShape(QUAD_STRIP);
+        bezNow foreach { p =>
+          vertex(p.as3D(Vec2.fromPolar(1, x(0)).xy, Vec3.Z))
+          vertex(p.as3D(Vec2.fromPolar(1, x(1)).xy, Vec3.Z))
+        }
+        endShape();
+      }
+    }
   }
 }
