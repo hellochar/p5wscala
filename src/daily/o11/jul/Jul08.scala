@@ -8,9 +8,10 @@ package daily
  */
 import processing.core._
 import org.zhang.geom.Vec2
+import org.zhang.lib._
 import org.zhang.lib.{HasMV, WorldApplet}
-import org.zhang.lib.world.HashWorld
 import world.action.Action
+import world.HashWorld
 import world.particle.Particle
 import zhang.Camera
 

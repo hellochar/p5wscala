@@ -12,15 +12,16 @@ import org.zhang.lib.MyPApplet
 import toxi.processing.ToxiclibsSupport
 import peasy.PeasyCam
 import toxi.geom.{Vec2D, Line2D}
+import org.zhang.geom.Vec2
 
 class Aug11 extends MyPApplet with Savable {
   import PApplet._; import PConstants._;
 
   type Line = Line2D
-  implicit def ii2v2[T, U](i:(T, U))(implicit num1: Numeric[T], num2: Numeric[U]) = {
-    new Vec2D(num1.toFloat(i._1), num2.toFloat(i._2))
-  }
-  implicit def vec2D2Tuple2(l:Vec2D) = (l.x, l.y)
+//  implicit def ii2v2[T, U](i:(T, U))(implicit num1: Numeric[T], num2: Numeric[U]) = {
+//    new Vec2D(num1.toFloat(i._1), num2.toFloat(i._2))
+//  }
+  implicit def vec2D2Vec2(l:Vec2D) = Vec2(l.x, l.y)
 
   var lines = Set[Line]()
 
@@ -29,7 +30,7 @@ class Aug11 extends MyPApplet with Savable {
   override def setup() {
     size(500, 500, P3D)
     new PeasyCam(this, 500)
-    tree(new Line((0, 0), (100, 0)))
+    tree(new Line(new Vec2D(0, 0), new Vec2D(100, 0)))
   }
 
   def angle(v:Vec2D) = atan2(v.y, v.x)

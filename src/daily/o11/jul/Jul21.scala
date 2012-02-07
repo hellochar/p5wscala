@@ -8,8 +8,9 @@ package daily
  * Time: 2:07 AM
  */
 import org.zhang.geom.Vec2
+import org.zhang.lib.MyPApplet
 
-class Jul21 extends NameApplet {
+class Jul21 extends MyPApplet with NameApplet {
 
 
   //Fractal landscape as per the one http://en.wikipedia.org/wiki/File:Animated_fractal_mountain.gif

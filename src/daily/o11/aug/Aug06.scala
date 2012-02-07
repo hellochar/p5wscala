@@ -577,7 +577,7 @@ class Aug06 extends MyPApplet with Savable {
       //todo: optimize
       val bigCircle = fromSpherical(400, az, 0)
       val littleCircle = fromSpherical(rad, az, el*2) //el [-PI/2, PI/2] => el*2 [-PI, PI]
-      bigCircle + littleCircle
+      ((v:Vec3) => (v.x, v.y, v.z))(bigCircle + littleCircle)
     }
   }
 

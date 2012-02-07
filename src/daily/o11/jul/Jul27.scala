@@ -9,10 +9,10 @@ package daily
  */
 import processing.core._
 import org.zhang.geom.Vec2
-import org.zhang.lib.P5Util
 import zhang.Methods
+import org.zhang.lib.{MyPApplet, P5Util}
 
-class Jul27 extends PApplet with NameApplet {
+class Jul27 extends MyPApplet with NameApplet {
   import PApplet._;
 
   override def setup() {

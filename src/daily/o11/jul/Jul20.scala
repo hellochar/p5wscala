@@ -9,8 +9,9 @@ package daily
  */
 import processing.core._
 import org.zhang.geom.Vec2
+import org.zhang.lib.MyPApplet
 
-class Jul20 extends NameApplet {
+class Jul20 extends MyPApplet with NameApplet {
   import PApplet._; import PConstants._; 
 
   var img:PImage = _
@@ -42,7 +43,6 @@ class Jul20 extends NameApplet {
   }
 
   val drawRing = {
-    val vtx = Function.tupled((vertex _): (Float, Float) => Unit)
     val offset = findGoodOffset(TWO_PI)
     val iters = 1000
     lazy val radius = width*4
@@ -50,7 +50,7 @@ class Jul20 extends NameApplet {
 
     () => {
       beginShape()
-      points.foreach(vtx)
+      points.foreach(vertex _)
       endShape()
     }
   }

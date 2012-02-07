@@ -9,6 +9,7 @@ package daily
 
 import processing.core._
 import org.zhang.lib.MyPApplet
+import org.zhang.geom.Vec2
 
 class Jan26 extends MyPApplet with Savable {
 
@@ -34,7 +35,7 @@ class Jan26 extends MyPApplet with Savable {
     }
   }
 
-  def render(func:Float => Float) = lines2((0 until width) map {x => (x.toFloat, map(func(map(x, 0, width, 0, 1)), 0, 1, height, 0))})
+  def render(func:Float => Float) = lines2((0 until width) map {x => Vec2(x.toFloat, map(func(map(x, 0, width, 0, 1)), 0, 1, height, 0))})
 
   override def draw() {
     background(0); stroke(255); noFill(); smooth();

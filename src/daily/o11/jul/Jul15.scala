@@ -11,10 +11,10 @@ import processing.core._
 import org.zhang.lib.world.HashWorld
 import org.zhang.geom.Vec2
 import org.zhang.lib.world.particle.Particle
-import org.zhang.lib.WorldApplet
 import geomerative.RPoint
+import org.zhang.lib.{MyPApplet, WorldApplet}
 
-class Jul15 extends NameApplet with WorldApplet {
+class Jul15 extends MyPApplet with NameApplet with WorldApplet {
   import PApplet._; import PConstants._;
 
   val world = new HashWorld(this)

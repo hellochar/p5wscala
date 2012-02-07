@@ -30,6 +30,7 @@ class Sep25 extends Applet {
   def bgColor = CP5.color(253);
 
 
+  import CP5.{color, red, green, blue}
   def darken(col:Int) = {  color(red(col)*.8f, green(col)*.8f, blue(col)*.8f); }
   def brighten(col:Int) = {  color(red(col)/.8f, green(col)/.8f, blue(col)/.8f); }
 

@@ -15,7 +15,7 @@ class Sep15 extends MyPApplet with Savable {
   import PApplet._;
 
   val path = LorenzAttractor().makePath(Vec3(1));
-  lazy val sliding = path.sliding(width, 10)
+  lazy val sliding = path.sliding(width, 10) map {_ map{x => (x.x, x.y, x.z)}}
 
   override def setup() {
     size(500, 500)
@@ -33,7 +33,7 @@ class Sep15 extends MyPApplet with Savable {
     
     //I want to have a list of parameters to give to draw alongside the list;
     val cs = List(color(255, 0, 0), color(0, 255, 0), color(0, 0, 255))
-    val ys = List(0, height*1/3f, height * 2/3f)
+    val ys = List(0f, height*1/3f, height * 2/3f)
     sliding.next.unzip3 match {
       case (a,b,c) => {
         draw(cs(0), ys(0), a)
