@@ -1,6 +1,6 @@
 import java.awt.event.{MouseWheelEvent, MouseWheelListener}
 import javax.swing.SwingUtilities
-import org.zhang.geom.{Vec3, Vec2}
+import org.zhang.geom.Vec3
 import org.zhang.lib.{MyPApplet, HasMV}
 import peasy.PeasyCam
 import processing.core.PApplet._
@@ -8,6 +8,8 @@ import processing.core.PConstants._
 import processing.core.{PVector, PMatrix3D, PApplet}
 
 //in file daily/package.scala
+
+package object daily {
 
   val FONTS_DIR = "C:\\Windows\\Fonts\\"
   def findFont(name:String):String = FONTS_DIR+name
@@ -49,12 +51,6 @@ import processing.core.{PVector, PMatrix3D, PApplet}
     def setRShapeCenter(name:RShape, x:Float, y:Float) = name.transform(x-name.getWidth/2, y-name.getHeight/2, name.getWidth, name.getHeight);
 
     def getNameShape(size:Int, fontName:String = "RAGE.TTF", alignment:Int = CENTER, name:String = "Xiaohan Zhang") = RG.getText(name, findFont(fontName), size, alignment)
-
-    @deprecated("use MyPApplet instead")
-    def line(v1:Vec2, v2:Vec2) { line(v1.x, v1.y, v2.x, v2.y) }
-    @deprecated("Use MyPApplet instead")
-    def ellipse(v1:Vec2, dims:Vec2) { ellipse(v1.x, v1.y, dims.x, dims.y) }
-
   }
 
   trait Savable extends PApplet {
