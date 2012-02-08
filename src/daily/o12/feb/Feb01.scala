@@ -10,7 +10,7 @@ package daily
 
 import processing.core._
 import org.zhang.lib.MyPApplet
-import org.zhang.geom.Vec3
+import org.zhang.geom.{Vec2, Vec3}
 
 object Feb01Main extends App {
   PApplet.main(Array("daily.Feb01"))
@@ -41,13 +41,26 @@ class Feb01 extends MyPApplet with Savable with SphereUtils {
     }
   }
 
-  case class Intersection(loc:Vec3, norm:Vec3)
+  case class Color(r:Float, g:Float, b:Float) {
+    def *(f:Float) = Color(r*f, g*f, b*f)
+    def *(c:Color) = Color(r*c.r, g*c.g, b*c.b)
+    def +(c:Color) = Color(r+c.r, g+c.g, b+c.b)
+  }
+  object Color {
+    def apply(g:Float):Color = Color(g, g, g)
+  }
+
+  case class Intersection(loc:Vec3, norm:Vec3, color:Color) {
+    assert(abs(1-norm.mag)<.01f)
+  }
 
   trait Object {
     def intersect(r:Ray):Option[Intersection]
   }
 
   case class Sphere(loc:Vec3, rad:Float) extends Object {
+    private val offset = Vec3.random * 10
+    def colorFor(norm:Vec3) = {val k = norm + offset; Color(1 - sq(noise(k.x, k.y, k.z)))}
     def intersect(r:Ray) = {
       //this amounts to finding the closest that the ray gets to the loc and seeing if that's less than rad. If there is,
       //we have an intersection.
@@ -61,14 +74,17 @@ class Feb01 extends MyPApplet with Savable with SphereUtils {
             val iLoc = p - r.norm * (rad - (p distTo loc));
             //we also know that the normal of any point on a sphere is in fact just that point from the origin, so we have
             val iNorm = (iLoc - loc).normalize
-            Some(Intersection(iLoc, iNorm));
+            Some(Intersection(iLoc, iNorm, colorFor(iNorm)));
           }
         }
       }
     }
   }
+//  case class Plane(norm:Vec3, ptOn:Vec3) extends Object {
+//    def intersect(r: Ray) = Some(r.)
+//  }
 
-  case class Camera(loc:Vec3, lookAt:Vec3, up:Vec3) {
+  class Camera(var loc:Vec3, var lookAt:Vec3, var up:Vec3) {
     assert(abs(1-up.mag) < 1e-3f);
     assert(abs((lookAt-loc).dot(up)) < 1e-3f);
 
@@ -78,41 +94,52 @@ class Feb01 extends MyPApplet with Savable with SphereUtils {
   case class Viewport(fovy:Float, fovx:Float)
 
   private sealed trait Light {
-    def color:Int
+    def color:Color
 
     /**
      * Float from [0, 1], where 0 means that there's no contribution from this light and 1 means there's full contribution
      * @return
      */
     def contrib(i:Intersection):Float
-    def colorFor(i:Intersection):(Float, Float, Float) = {
-      val c = contrib(i);
-      (red(color)*c, green(color)*c, blue(color)*c)
+    def contribution(i:Intersection):Color = {
+      color * contrib(i) * i.color
     }
   }
-  private case class Ambient(color:Int) extends Light {
+
+  private case class Ambient(color:Color) extends Light {
     def contrib(i:Intersection) = 1
   }
-  private case class Directional(color:Int, norm:Vec3) extends Light {
-
+  private case class Directional(color:Color, norm:Vec3) extends Light {
+    assert(abs(1-norm.mag)<.01f)
     def contrib(i: Intersection) = 0f max (i.norm dot norm)
   }
+  private case class Point(color:Color, loc:Vec3, quad:Float) extends Light {
+    def contrib(i: Intersection) = max(0f, (i.norm dot -(i.loc - loc).normalize)) * 1 / (quad * (i.loc - loc).mag)// / ((i.loc - loc).mag2 * falloff))
+  }
 
-  var cam = Camera(Vec3.Z * 200, Vec3(), -Vec3.Y);
-  var viewport = Viewport(PI/3, PI/3)
+//  def cam = Camera(Vec2.fromPolar(200, millis()/1000f).xz, Vec3(), -Vec3.Y);
+  var cam = new Camera(Vec2.fromPolar(200, millis()/1000f).xz, Vec3(), -Vec3.Y);
+  def viewport = Viewport(PI/3, PI/3 * width / height)
 
   private var scene:Seq[Object] = (0 until 10).map(_ => Sphere(Vec3.random * 100, 10))//Seq(Sphere(Vec3(0, 0, 5), 3));
 //  private def scene:Seq[Object] = Seq(Sphere(Vec3.fromSpherical(2, millis()/1000f, millis()/2500f), 2))
-  private var myLights:Seq[Light] = Seq(Ambient(color(128)), Directional(color(128, 0, 0), Vec3(1, 0, 1)));
+//  private var myLights:Seq[Light] = Seq(
+  private def myLights:Seq[Light] = Seq(
+    Ambient(Color(.5f)),
+    Directional(Color(.5f, 0, 0), Vec3(1, 0, 1).normalize),
+    Point(Color(0, .5f, 0), Vec3.fromSpherical(sin(millis()/9500f)*100, 0, 0), .01f));
 
   override def setup() {
     size(300, 300)
+    colorMode(RGB, 1, 1, 1)
   }
 
   override def draw() {
+//    cam.loc
+    cam.loc = Vec2.fromPolar(map(sin(millis()/3000f), -1, 1, 20, 200), millis()/1000f).xz
     var graphics:PGraphics = null
-    if(keyPressed:Boolean) {
-      val pg = createGraphics(width/3, height/3, JAVA2D);
+    if(!(keyPressed:Boolean)) {
+      val pg = createGraphics(width, height, JAVA2D);
       graphics = pg;
 
       /**
@@ -130,25 +157,36 @@ class Feb01 extends MyPApplet with Savable with SphereUtils {
           val y = cam.up
           val x = y cross z
 
-          val dThetaX = map(sx, 0, width, -viewport.fovx/2, viewport.fovx/2)
-          val dThetaY = map(sy, 0, height, -viewport.fovy/2, viewport.fovy/2)
+          val dThetaX = map(sx, 0, pg.width, -viewport.fovx/2, viewport.fovx/2)
+          val dThetaY = map(sy, 0, pg.height, -viewport.fovy/2, viewport.fovy/2)
           //
 
           val norm = -z + y * sin(dThetaY) + x * sin(dThetaX);
           Ray(cam.loc, norm.normalize);
         }
-        scene.flatMap{ s => s.intersect(ray).map((s, _)) } match {
-          case Seq((obj, isect), _) => color(255);//((v:Vec3) => color(v.x, v.y, v.z))(myLights.map(_.colorFor(isect)).foldLeft(Vec3())(_ + Vec3(_)))
-          case _ => color(0);
+        scene.flatMap{ s => s.intersect(ray).map((s, _)) }.sortBy{_._2.loc distTo cam.loc}.headOption match {
+          case Some((obj, isect)) => {
+
+            val sum = myLights.map(_.contribution(isect)).foldLeft(Color(0))(_ + _)
+            def fogExp = 1
+//            def fogExp = pow(math.E.toFloat, -((isect.loc distTo cam.loc) / 300))
+//            println("fogExp:"+fogExp)
+            val fs = sum * fogExp
+            color(fs.r, fs.g, fs.b)
+          }
+          case None => color(.8f)
         }
+//        match {
+//          case Seq((obj, isect), _) => color(255);//((v:Vec3) => color(v.x, v.y, v.z))(myLights.map(_.colorFor(isect)).foldLeft(Vec3())(_ + Vec3(_)))
+//          case _ => color(0);
+//        }
       }
 
-      pg.beginDraw();
+      pg.beginDraw()
       pg.loadPixels()
-      for(x <- (0 until pg.width); y <- 0 until pg.height) {
-        pg.pixels(y*pg.width+x) = raytrace(x, y)
-  //      println("Done "+x+", "+y)
-      }
+      println(org.zhang.lib.time((0 until pg.width).flatMap{ x => (0 until pg.height).map{(x, _)} }.par.foreach {
+        case (x, y) => pg.pixels(y*pg.width+x) = raytrace(x, y)
+      })._2 / 1e6f + "ms")
       pg.updatePixels()
       pg.endDraw();
     } else {
@@ -165,8 +203,12 @@ class Feb01 extends MyPApplet with Savable with SphereUtils {
       pg.perspective(viewport.fovy, viewport.fovx / viewport.fovy, .01f, 10000);
 
       myLights foreach {_ match {
-        case Ambient(c) => pg.ambientLight(red(c), green(c), blue(c))
-        case Directional(c, n) => pg.directionalLight(red(c), green(c), blue(c), n.x, n.y, n.z)
+        case Ambient(c) => pg.ambientLight(c.r*255, c.g*255, c.b*255)
+        case Directional(c, n) => pg.directionalLight(c.r*255, c.g*255, c.b*255, -n.x, -n.y, -n.z)
+        case Point(c, l, quad) => {
+          pg.lightFalloff(0, 0, quad);
+          pg.pointLight(c.r*255, c.g*255, c.b*255, l.x, l.y, l.z)
+        }
       }}
 
       pg.noStroke(); pg.fill(255);
