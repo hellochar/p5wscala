@@ -216,6 +216,7 @@ class RayTracer {
   case class Plane(norm:Vec3, ptOn:Vec3) extends Object {
     def intersect(r: Ray) = {
       //if ray's direction dotted with norm is the same sign as
+      None
     }
   }
 
