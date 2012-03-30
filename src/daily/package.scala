@@ -65,7 +65,7 @@ package object daily {
     def pollSave(prefix:String = "") {
       if(saving && !trulyOnline) {
         val name = getClass.getName.drop(6) //daily.nov.Nov11 -> nov.Nov11
-        val begin = "C:\\Users\\hellochar\\Documents\\dev\\NetBeansIntelliJ\\Daily\\out\\"+name.replace(".", "\\").toLowerCase+"-out\\"
+        val begin = "C:\\Users\\hellochar\\Documents\\dev\\Projects\\Daily\\out\\"+name.replace(".", "\\").toLowerCase+"-out\\"
         val path = begin+prefix+this.getClass.getSimpleName.filter('$'!=)+"-"+nf(frameCount, 4)+".png"
         g.save(path)
       }

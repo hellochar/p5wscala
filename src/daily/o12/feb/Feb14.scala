@@ -64,34 +64,38 @@ class Feb14 extends MyPApplet with Savable {
       horiz(x)
     }
 
-    shapes.toSeq.groupBy(_.gridX) foreach { case (gridX, shapes) => {
-      val sorted = shapes.sortBy(_.pos.y)
-      val end = sorted.head
+    if(shapes.size > 12) {
+      shapes.toSeq.groupBy(_.gridX) foreach { case (gridX, shapes) => {
+        val sorted = shapes.sortBy(_.pos.y)
+        val end = sorted.head
 
-      val bottom = Vec2((gridX+1)* gridSize, height - (gridWidth - gridX) * 5)
-      stroke(255, 160, gridX * 10); strokeWeight(4);
-      line(Vec2(bottom.x, end.along(.75f).y), bottom);
-      line(bottom, Vec2(0, bottom.y))
+        val bottom = Vec2((gridX+1)* gridSize, height - (gridWidth - gridX) * 5)
+        stroke(255, 160, gridX * 10); strokeWeight(4);
+        line(Vec2(bottom.x, end.along(.75f).y), bottom);
+        line(bottom, Vec2(0, bottom.y))
 
-      sorted foreach {s =>
-        line(s.along(.75f), Vec2(bottom.x, s.along(.75f).y))
-      }
-    }}
-    shapes.toSeq.groupBy(_.gridY) foreach { case (gridY, shapes) => {
-      val sorted = shapes.sortBy(_.pos.x)
-      val end = sorted.last
+        sorted foreach {s =>
+          line(s.along(.75f), Vec2(bottom.x, s.along(.75f).y))
+        }
+      }}
+      shapes.toSeq.groupBy(_.gridY) foreach { case (gridY, shapes) => {
+        val sorted = shapes.sortBy(_.pos.x)
+        val end = sorted.last
 
-      val left = Vec2(gridY * 5 + 5, gridY * gridSize)
-      val botCorner = Vec2(left.x, (height - 5 * gridWidth) - (gridHeight - gridY) * 5)
-      stroke(gridY * 10, 160, 255); strokeWeight(4);
-      line(Vec2(end.along(.25f).x, left.y), left);
-      line(left, botCorner)
-      line(botCorner, Vec2(0, botCorner.y))
+        val left = Vec2(gridY * 5 + 5, gridY * gridSize)
+        val botCorner = Vec2(left.x, (height - 5 * gridWidth) - (gridHeight - gridY) * 5)
+        stroke(gridY * 10, 160, 255); strokeWeight(4);
+        line(Vec2(end.along(.25f).x, left.y), left);
+        line(left, botCorner)
+        line(botCorner, Vec2(0, botCorner.y))
 
-      sorted foreach {s =>
-        line(s.along(.25f), Vec2(s.along(.25f).x, left.y))
-      }
-    }}
+        sorted foreach {s =>
+          line(s.along(.25f), Vec2(s.along(.25f).x, left.y))
+        }
+      }}
+    } else {
+
+    }
 
     pollSave() //check if the screen should be saved
   }

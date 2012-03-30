@@ -142,27 +142,30 @@ class Dec02b extends MyPApplet with Savable { app =>
         ellipse(0, 0, 25, 25)
         fill(0, 255, 0);
         text(stringRep(e), 0, 0)
-        if(e.isInstanceOf[Unary]) {
-          line(0, 0, 0, 25)
-          pushMatrix()
-          translate(0, 25)
-          scale(.5f)
-          draw(e.asInstanceOf[Unary].op)
-          popMatrix()
-        }
-        else if(e.isInstanceOf[Binary]) {
-          line(0, 0, -25, 25)
-          line(0, 0, 25, 25)
-          pushMatrix()
-          translate(-25, 25)
-          scale(.5f)
-          draw(e.asInstanceOf[Binary].leftOp)
-          popMatrix()
-          pushMatrix()
-          translate(25, 25)
-          scale(.5f)
-          draw(e.asInstanceOf[Binary].rightOp)
-          popMatrix()
+        e match {
+          case u:Unary => {
+            line(0, 0, 0, 25)
+            pushMatrix()
+            translate(0, 25)
+            scale(.5f)
+            draw(u.op)
+            popMatrix()
+          }
+          case b:Binary => {
+            line(0, 0, -25, 25)
+            line(0, 0, 25, 25)
+            pushMatrix()
+            translate(-25, 25)
+            scale(.5f)
+            draw(b.leftOp)
+            popMatrix()
+            pushMatrix()
+            translate(25, 25)
+            scale(.5f)
+            draw(b.rightOp)
+            popMatrix()
+          }
+          case _ => {}
         }
       }
 
@@ -220,8 +223,8 @@ class Dec02b extends MyPApplet with Savable { app =>
   }
   
   override def keyPressed() {
-//    super.keyPressed(); //pressing space toggles a boolean variable to save the screen
-    if(key == ' ') {
+    super.keyPressed(); //pressing space toggles a boolean variable to save the screen
+    if(key == 'z') {
       setExpr()
     }
     if(key == 'q') drawBuf = !drawBuf

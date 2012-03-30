@@ -53,9 +53,10 @@ object Script {
     //e.g. Jul12.scala => alacs.12luJ => .12luJ => 12luJ => Jul12
     //I would like to specify subpackages for where my scala file lives (e.g. I'd like to place Jul12 in daily\jul\Jul12.scala)
 
-    val codeName = dropExtension(dropUntilChar(file.toString, '\\')).replace("\\", "/") //daily\oct\Oct22 => daily/oct/Oct22
+    val folderName = dropExtension(dropUntilChar(file.toString, '\\')).replace("\\", "/") //daily\oct\Oct22 => daily/oct/Oct22
+    val className = "daily."+sketchName
 
-    println("Script: file is "+file+", sketchName is "+sketchName+", codeName is "+codeName)
+    println("Script: file is "+file+", className is "+className+", folderName is "+folderName)
 
     val sourceFile = file
     //prereq: do a check and make sure the file is ok.
@@ -74,7 +75,7 @@ object Script {
 -outjars """+sketchName+""".jar
 -libraryjars 'C:\Program Files\Java\jdk1.6.0_23\jre\lib\rt.jar'
 
--keep public class """+codeName.replace("/", ".")+"""
+-keep public class """+className+"""
 
 -dontpreverify
 -ignorewarnings
@@ -153,7 +154,7 @@ object Script {
      http://java.sun.com/javase/6/docs/technotes/guides/jweb/deployment_advice.html -->
         <script type="text/javascript" src="http://www.java.com/js/deployJava.js"></script>
         <script type="text/javascript">
-          var attributes ={code: '"""+codeName+"""', archive: '"""+jarName+"""', width: """+width+""", height: """+height+""", image: 'loading.gif'};
+          var attributes ={code: '"""+className+"""', archive: '"""+jarName+"""', width: """+width+""", height: """+height+""", image: 'loading.gif'};
           var parameters = {"java_arguments": "-Djnlp.packEnabled=true" };
           var version = '1.5';
           deployJava.runApplet(attributes, parameters, version);
@@ -161,7 +162,7 @@ object Script {
         <noscript>
           <div>
             <!--[if !IE]> -->
-            <object classid="java:"""+codeName+""".class"
+            <object classid="java:"""+className+""".class"
                     type="application/x-java-applet"
                     archive="""+jarName+"""
                     width="""+width+""" height="""+height+"""
@@ -188,7 +189,7 @@ object Script {
                       width="""+width+""" height="""+height+"""
                       standby="Loading Processing software...">
 
-                  <param name="code" value="""+codeName+"""/>
+                  <param name="code" value="""+className+"""/>
                   <param name="archive" value="""+jarName+"""/>
 
                   <param name="mayscript" value="true"/>

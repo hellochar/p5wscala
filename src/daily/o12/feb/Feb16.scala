@@ -32,14 +32,15 @@ class Feb16 extends MyPApplet with Savable {
 
   lazy val circles = Iterator.iterate(Seq(Circle(P5Util.randomVector(this), 25, color(0, 255, 255)))){seq =>
     println("on "+seq.length+" with area "+area(seq))
+    seq :+
     (Iterator.continually{
       val loc = P5Util.randomVector(this)
       val min = seq.minBy(c => (c.pos distTo loc) - c.rad)
       (loc, (min.pos distTo loc) - min.rad)
-    }.find(_._2 > 2) match {
-      case Some((pos, rad)) => Circle(pos, 25f min rad, color((seq.length / 10f) % 255, 255, 255))
-    }) +: seq
-  }.dropWhile(area(_) < .85f).next()
+    }.find(_._2 > 0) match {
+      case Some((pos, rad)) => Circle(pos, seq.head.rad min rad, color((seq.length / 10f) % 255, 255, 255))
+    })
+  }.dropWhile(s => s.length < 5000 && area(s) < .85f).next()
 
   override def setup() {
     size(500, 500)
