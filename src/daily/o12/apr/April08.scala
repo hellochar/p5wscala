@@ -3,6 +3,7 @@ package daily
 import processing.core._
 import org.zhang.geom.Vec2
 import org.zhang.lib.{P5Util, MyPApplet}
+import scala.Double
 
 class April08 extends MyPApplet with Savable { app =>
 
@@ -76,7 +77,6 @@ class April08 extends MyPApplet with Savable { app =>
 
   def inRadius(center:Vec2, rad:Float) = ants filter {x => (x.loc distTo center) < rad}
 
-
   class Ant(var loc:Vec2, var face:Vec2, val instrs:Seq[Instr], var food:Int) {
     var iStream = Stream.continually(instrs).flatMap{x => x}.drop(randi(0, instrs.length))
 
@@ -121,11 +121,24 @@ class April08 extends MyPApplet with Savable { app =>
     }
   }
 
-  var ants = Set[Ant]()
+  import collection.mutable.{SetProxy, Set}
+  object ants extends SetProxy[Ant] {
+    val self = Set[Ant]()
+    val grid = Array.fill[Option[Ant]](100, 100)(None);
+
+    override def +=(elem: Ant) = {
+      super.+=(elem)
+      this
+    }
+
+//    override def -=(elem: Ant) = {
+//
+//    }
+  }
   lazy val cam = new zhang.Camera(this)
   override def setup() {
     size(500, 500)
-    ants ++= (0 until 25) map {_ => new Ant()}
+    ants ++= (0 until 4) map {_ => new Ant()}
 
     cam.setCenter(0, 0)
     cam.setViewportWidth(20);

@@ -142,23 +142,40 @@ class Mar28 extends MyPApplet with Savable {
   }
   def cutX(c:Cube, f:Float = random(.2f, .8f)) = cut(c, Seq(0, 2, 3, 1), Seq(4, 6, 7, 5), f)
   def cutY(c:Cube, f:Float = random(.2f, .8f)) = cut(c, Seq(0, 1, 4, 5), Seq(2, 3, 6, 7), f)
-  def cutZ(c:Cube, f:Float = random(.2f, .8f)) = cut(c, Seq(1, 3, 7, 5), Seq(0, 2, 6, 4), f)
+//  def cutZ(c:Cube, f:Float = random(.2f, .8f)) = cut(c, Seq(1, 3, 7, 5), Seq(0, 2, 6, 4), f)
 
   def randomTransform(c:Cube):Set[Cube] = {
     implicit def m2sc(m:Map[Int, Vec3]) = Set(c.replaced(m))
     implicit def ms2sc(s:Set[Map[Int, Vec3]]) = s.map{c.replaced(_)}
 
-    var transforms = Set[Set[Cube]](extrude(c), cutX(c), cutY(c), cutZ(c), Set())
-    if(!c.isRoofAngled) transforms += slopeRoof(c)
+    var transforms = Set[Set[Cube]](extrude(c), cutX(c), cutY(c), /*cutZ(c),*/ Set())
+    /*if(!c.isRoofAngled)*/ transforms += slopeRoof(c)
 
-    randi(0, 5) match {
-      case 0 => slopeRoof(c)
-      case 1 => extrude(c)
-      case 2 => cutX(c)
-      case 3 => cutY(c)
-      case 4 => cutZ(c)
-      case 5 => Set()
-    }
+//    randi(0, 5) match {
+//      case 0 => slopeRoof(c)
+//      case 1 => extrude(c)
+//      case 2 => cutX(c)
+//      case 3 => cutY(c)
+//      case 4 => cutZ(c)
+//      case 5 => Set()
+//    }
+
+
+    /**
+     * House = {
+     *  Roof[z = [.8, 1]]
+     *  Side[]
+     *  Side[]
+     *  Side[]
+     *  Side[]
+     *  Side[]
+     *
+     * }
+     */
+
+
+
+    org.zhang.lib.random(transforms)
   }
 
   var cubes:Set[Cube] = Set(Cube())

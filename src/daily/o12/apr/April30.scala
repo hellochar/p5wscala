@@ -12,96 +12,85 @@ import org.zhang.lib.MyPApplet
 import peasy.PeasyCam
 import org.zhang.geom.{Vec3, Vec2}
 
-class April30 extends MyPApplet with Savable {
-  app =>
-
-  import PApplet._;
-  import PConstants._;
-
-  class Mutable[T](var elem: T) {
-    def get = elem
-
-    def set(t: T) {
-      elem = t
-    }
-  }
-
-  implicit def mutable2Elem[T](m: Mutable[T]) = m.get
-
-  implicit def mutSeq2elemSeq[T](m: Seq[Mutable[T]]) = m.map(_.get)
-
-  def lerpFunc = if (keyPressed) ((x: Float) => {
-    (sin(x * TWO_PI) + 1) / 2
-  })
-  else (identity[Float] _)
-
-  def lerp2(a: Vec2, b: Vec2, t: Float) = a + (b - a) * lerpFunc(t);
-
+class Bezier[T <: Mutable[Vec2]](var points: Seq[T]) {
   def lerp(a: Vec2, b: Vec2, t: Float) = a + (b - a) * t;
 
-  def bezier(pts: Seq[Vec2])(t: Float): Option[Vec2] = pts match {
-    case Seq(a, b) => Some(lerp2(a, b, t))
+  protected def bezier(pts: Seq[Vec2])(t: Float): Option[Vec2] = pts match {
+    case Seq(a, b) => Some(lerp(a, b, t))
     case s if s.length < 2 => None;
     case s => bezier(s.sliding(2).map {
       x => lerp(x(0), x(1), t)
     }.toSeq)(t)
   }
 
-  override def setup() {
-    size(500, 500)
-    PApplet.runSketch(Array("daily.April.Draw3D"), Draw3D);
-  }
+  def curveAt = bezier(points) _
 
-  def curBez = bezier(pts) _
+  def sampled = Range.Double(0, 1, .01) flatMap {
+      x => curveAt(x.toFloat)
+    }
+}
 
-  def sampledBez = Range.Double(0, 1, .01) flatMap {
-    x => curBez(x.toFloat)
-  }
+trait BezierApplet[T <: Mutable[Vec2]] extends MyPApplet { app =>
+
+  def construct(v:Vec2):T
+
+  def bez: Option[Bezier[T]]
+  var selected: Option[T] = None
+
+  @inline
+  val POINT_RAD = 10
 
   def drawBezier() {
-    lines2(sampledBez)
+    bez foreach { k =>
+      lines2(k.sampled)
+    }
   }
-
-  var pts = Seq[Mutable[Vec2]]()
-  var selected: Option[Mutable[Vec2]] = None
 
   override def draw() {
     background(0);
     smooth();
-    noFill();
-    stroke(255, 128);
-    strokeWeight(1);
-    drawBezier()
 
-    fill(255);
-    noStroke();
-    curBez((millis() / 1800f) % 1) foreach {
-      ellipse(_, 10, 10)
+    bez foreach { bez =>
+      noFill();
+      //draw thin bezier
+      stroke(255, 128);
+      strokeWeight(1);
+      drawBezier()
+
+      //draw pulse
+      fill(255);
+      noStroke();
+      bez.curveAt((millis() / 1800f) % 1) foreach {
+        ellipse(_, 10, 10)
+      }
+
+      //draw the hull of all the points
+      noFill();
+      stroke(255);
+      strokeWeight(3);
+      lines2(bez.points);
+
+      //draw individual points
+      noStroke();
+      fill(255, 220, 0);
+      bez.points foreach {
+        ellipse(_, POINT_RAD * 2, POINT_RAD * 2)
+      }
+
+      //draw selection bar
+      selected foreach {
+        noFill; stroke(255); strokeWeight(1); ellipse(_, POINT_RAD * 4, POINT_RAD * 4)
+      }
     }
-
-    noFill();
-    stroke(255);
-    strokeWeight(3);
-    lines2(pts);
-
-    noStroke();
-    fill(255, 220, 0);
-    pts foreach {
-      ellipse(_, 10, 10)
-    }
-
-    selected foreach {
-      noFill; stroke(255); strokeWeight(1); ellipse(_, 20, 20)
-    }
-
-    pollSave() //check if the screen should be saved
   }
 
   override def mousePressed() {
-    selected = pts.find(x => (x.get distTo mouseVec) < 5)
-    if (!selected.isDefined) {
-      selected = Some(new Mutable(mouseVec))
-      pts :+= selected.get;
+    bez foreach { bez =>
+      selected = bez.points.find(x => (x.get distTo mouseVec) < POINT_RAD)
+      if (!selected.isDefined) {
+        selected = Some(construct(mouseVec))
+        bez.points :+= selected.get;
+      }
     }
   }
 
@@ -111,15 +100,96 @@ class April30 extends MyPApplet with Savable {
     }
   }
 
-  override def keyPressed() {
-    super.keyPressed(); //pressing space toggles a boolean variable to save the screen
+}
+
+class MutableRadial(t:Vec2, width:Float, height:Float) extends Mutable[Vec2](t) {
+  val curve = new Bezier[Mutable[Vec2]](Seq(new Mutable(Vec2(0, height/2)), new Mutable(Vec2(width, height/2))))
+
+  //mutates curve's points to be a)sorted by x, b) have the same "point" at the start and the end
+  def reorder() {
+    curve.points.head.set(Vec2(0, curve.points.head.y))
+    curve.points.last.set(Vec2(width, curve.points.head.y))
+  }
+
+  def radius(theta:Float) = {
+    val p = curve.curveAt(theta/PConstants.TWO_PI).get
+    PApplet.pow(2, PApplet.map(p.y, 0, height, -5, 5));
+  }
+}
+
+class April30 extends BezierApplet[MutableRadial] with Savable {
+  app =>
+
+  import PApplet._;
+  import PConstants._;
+
+  def construct(v: Vec2) = new MutableRadial(v, RadialControl.width, RadialControl.height)
+
+  val bez = Some(new Bezier[MutableRadial](Seq()))
+
+  override def setup() {
+    size(300, 300)
+    PApplet.runSketch(Array("3D Surface"), Draw3D);
+    PApplet.runSketch(Array("Radial Control"), RadialControl);
+  }
+
+  override def draw() {
+    selected foreach {s =>
+      s.reorder();
+    }
+    super.draw()
+//    println(bez.get.points)
+//    println(bez.get.curveAt(.5f))
+  }
+
+  def lerpRadius(a: Float, b: Float, t: Float) = a + (b - a) * t;
+
+  protected def bezierRadius(pts: Seq[Float])(t: Float): Option[Float] = pts match {
+    case Seq(a, b) => Some(lerp(a, b, t))
+    case s if s.length < 2 => None;
+    case s => bezierRadius(s.sliding(2).map {
+      x => lerp(x(0), x(1), t)
+    }.toSeq)(t)
+  }
+
+  def radiusAt(theta:Float) = bezierRadius(bez.get.points.map(_.radius(theta))) _
+
+  def sampledRadiusFunc(theta:Float) = Range.Double(0, 1, .01) flatMap {
+    x => radiusAt(theta)(x.toFloat)
+  }
+  val (sampledRadius, sampledRadiusMap) = org.zhang.lib.memoize(sampledRadiusFunc _)
+
+  private object RadialControl extends BezierApplet[Mutable[Vec2]] {
+    def bez = app.selected.map{_.curve}
+    def construct(v: Vec2) = new Mutable(v)
+
+    override def setup() {
+      size(400, 200);
+    }
+
+    override def draw() {
+      super.draw();
+
+      stroke(255); strokeWeight(.5f);
+      horiz(height/2)
+    }
+
+    override def mouseDragged() {
+      super.mouseDragged();
+      sampledRadiusMap.clear()
+    }
+
+    override def mousePressed() {
+      super.mousePressed();
+      sampledRadiusMap.clear()
+    }
   }
 
   private object Draw3D extends MyPApplet {
     lazy val cam = new PeasyCam(this, 500);
 
     override def setup() {
-      size(500, 500, P3D);
+      size(640, 480, P3D);
       cam;
     }
 
@@ -129,18 +199,19 @@ class April30 extends MyPApplet with Savable {
       fill(220);
       lights();
       zhang.Methods.drawAxes(g, 100);
-      val bezNow = sampledBez.map(v => Vec2(v.x, app.height - v.y));
-      (0 to 40).map(x => map(x.toFloat, 0, 40, 0, TWO_PI)).sliding(2).foreach {
-        x =>
-          beginShape(QUAD_STRIP);
-          bezNow foreach {
-            p =>
-              vertex(p.as3D(Vec2.fromPolar(1, x(0)).xy, Vec3.Z))
-              vertex(p.as3D(Vec2.fromPolar(1, x(1)).xy, Vec3.Z))
-          }
-          endShape();
+      bez foreach { bez =>
+        val bezNow = bez.sampled.map(v => Vec2(v.x, app.height - v.y));
+        (0 to 40).map(x => map(x.toFloat, 0, 40, 0, TWO_PI)).sliding(2).foreach {
+          theta =>
+            beginShape(QUAD_STRIP);
+            (bezNow zip sampledRadius(theta(0)) zip sampledRadius(theta(1))) foreach {
+              case ((p, t0), t1) =>
+                vertex(p.as3D(Vec2.fromPolar(t0, theta(0)).xy, Vec3.Z))
+                vertex(p.as3D(Vec2.fromPolar(t1, theta(1)).xy, Vec3.Z))
+            }
+            endShape();
+        }
       }
     }
   }
-
 }

@@ -95,18 +95,34 @@ class April01 extends MyPApplet with Savable with JavaTokenParsers {
     }
   }
   case class Cylinder(s:Scope) extends Primitive {
+
+    def cylinder(baseRad: Float, yLen: Float, endRad: Float, fillEnds: Boolean = true, precision: Float = 2f) {
+        val divisions = (2 * PI * ((baseRad + endRad) / 2) / precision).toInt; //the number of partitions you should split the circle into
+        beginShape(TRIANGLE_STRIP)
+        val angles = (0 to divisions) map {_ * TWO_PI / divisions} //go all the way TO detail so the cylinder closes properly
+        angles foreach {
+          ang =>
+            vertex(Vec2.fromPolar(baseRad, ang).xz)
+            vertex(Vec2.fromPolar(endRad, ang).xz + Vec3.Y * yLen)
+        }
+        endShape(CLOSE)
+        if (fillEnds) {
+          lines3(angles map (Vec2.fromPolar(baseRad, _).xz)) //Draw the bottom face
+          lines3(angles map (Vec2.fromPolar(endRad, _).xz + Vec3.Y * yLen)) //Draw the top face
+        }
+      }
+
     def draw() {
       matrix(s.matrix) {
-        translate(.5f, .5f, 0)
-        rotateX(-PI/2)
+        translate(.5f, 0, .5f)
         cylinder(.5f, 1, .5f, true, .025f)
       }
     }
   }
 
-  class Shape(val symbol:String) {
+  class Shape(val symbol:String, initScope:Scope = Scope(Vec3(), Vec3.X, Vec3.Y, Vec3.Z, Vec3(1)), var active:Boolean = true) {
 
-    private var scopeVar = Scope(Vec3(), Vec3.X, Vec3.Y, Vec3.Z, Vec3(1))
+    private var scopeVar = initScope;
     private var queue = collection.immutable.Queue[Scope]();
 
     def pushMatrix() {
@@ -134,51 +150,71 @@ class April01 extends MyPApplet with Savable with JavaTokenParsers {
       val rad = math.toRadians(deg).toFloat
       scopeVar = scopeVar.copy(X = scopeVar.X.rotate(Vec3.Z, rad), Y = scopeVar.Y.rotate(Vec3.Z, rad))
     }
-
-    def placePrimitive(name:String) {
-      name match {
-        case "cube" => primitives += Cube(scope)
-        case "cylinder" => primitives += Cylinder(scope)
-      }
-    }
   }
 
-  /**
-   * This might hold "A" -> "[S(1,1,5) T(0,0,5) I(cube)] floor floor floor,
-   *                 floor
-   */
-  var productions:Map[String, String] = Map()
-
-  private def mapParser[A](map:collection.Map[String, A]):Parser[String] = map.keys.map(x => x:Parser[String]).reduceOption(_ | _) match {
-    case Some(p) => p
-    case None => failure("Map parser failed for "+map)
-  }
-
-//  def prod = (symbol ~ "->" ~ """[a-zA-Z0-9, \(\)\*\"{}\|]+""".r) ^^ {
-//    case lhs ~ "->" ~ instrsString => productions(lhs) = instrsString
+//  private def mapParser[A](map:collection.Map[String, A]):Parser[String] = map.keys.map(x => x:Parser[String]).reduceOption(_ | _) match {
+//    case Some(p) => p
+//    case None => failure("Map parser failed for "+map)
 //  }
-  def symbol = regex("""[a-zA-Z]+""".r)
-
-  def instrs = rep(instr)
-  def instr = func3("T", activeShape.translate _) |
-              func3("S", activeShape.setScale _) |
-              "[" ^^ (_ => () => activeShape.pushMatrix()) |
-              "]" ^^ (_ => () => activeShape.popMatrix()) |
-              ("I("~>("""[a-zA-Z0-9]+""".r)<~")" ^^ (s => () => activeShape.placePrimitive(s)))
-//  |(productions )
-
-  def fp = floatingPointNumber
-  def func3[T](name:String, func:(Float, Float, Float) => T) = ((name+"(")~>((fp <~ ",") ~ (fp <~ ",") ~ fp)<~")") ^^ {
-    case a~b~c => () => func(a.toFloat,b.toFloat,c.toFloat)
-  }
 
 
 //  A -> < T(0,0,6) S(8,10,18) I("cube") >
 //       T(6, 0, 0) S(7, 13, 18) I("cube") T(0, 0, 16) S(8, 15, 8) I("cylinder")
 
-  var activeShape:Shape = _;
-  var configuration = Set[Shape]()
-  var primitives = Set[Primitive]()
+  def runAll(productions:Map[String, String]):(Set[Shape], Set[Primitive]) = {
+    var configuration = Set[Shape](new Shape("A"))
+    var primitives = Set[Primitive]()
+    var activeShape:Shape = null;
+
+    while(configuration.exists(_.active)) {
+      activeShape = configuration.find(_.active).get
+      productions.get(activeShape.symbol) match {
+        case Some(rhs) => run(rhs)
+        case None => println("No production for symbol "+activeShape.symbol+"!")
+      }
+
+
+      activeShape.active = false;
+    }
+
+    /*
+     * Mutates configuration and primitives
+     */
+    def run(rhs:String) {
+      def fp = floatingPointNumber
+      def func3[T](name:String, func:(Float, Float, Float) => T) = ((name+"(")~>((fp <~ ",") ~ (fp <~ ",") ~ fp)<~")") ^^ {
+        case a~b~c => func(a.toFloat,b.toFloat,c.toFloat)
+      }
+
+      def instr = func3("T", activeShape.translate _) |
+                  func3("S", activeShape.setScale _) |
+                  "[" ^^ (_ => activeShape.pushMatrix()) |
+                  "]" ^^ (_ => activeShape.popMatrix()) |
+                  "I("~>("""[a-zA-Z0-9]+""".r)<~")" ^^ (placePrimitive _)
+
+      def placePrimitive(name:String) {
+        name match {
+          case "cube" => primitives += Cube(activeShape.scope)
+          case "cylinder" => primitives += Cylinder(activeShape.scope)
+        }
+      }
+
+      parse(rep(instr), rhs) //do the parsing; should mutate activeShape, primitives, and configuration
+    }
+
+    (configuration, primitives)
+  }
+
+  def readString(inputString:String) = {
+    def symbol = regex("""[a-zA-Z]+""".r)
+    def prod = (symbol ~ "->" ~ """[a-zA-Z0-9, \(\)\*\"{}\|\[\]]+""".r) ^^ {
+      case lhs ~ "->" ~ instrsString => {/*println("Parsed LHS:"+lhs+", RHS:"+instrsString); */lhs -> instrsString }//mutation happens here
+    }
+    parse(rep(prod), inputString) match {
+      case Success(list, _) => Some(runAll(list.toMap))
+      case k => {println("Failure! "+k); None}
+    }
+  }
 
   lazy val cam = new PeasyCam(this, 100);
   override def setup() {
@@ -190,19 +226,15 @@ class April01 extends MyPApplet with Savable with JavaTokenParsers {
     background(204)
     zhang.Methods.drawAxes(g, 250)
     scale(10)
-//    (new Cube(Scope())).draw()
-    activeShape = new Shape("A")
-    primitives = Set()
 
-    parse(instrs, """[ T(0, 0, 6) S(8, 10, 18) I(cube) ] T(6, 0, 0) S(7, 13, 18) I(cube) T(0, 0, 16) S(8, 15, 8) I(cylinder)""") match {
-      case Success(instrs, _) => {
-        instrs foreach {_()}
+    readString("A -> [ T(0, 0, 6) S(8, 10, 18) I(cube) ] T(6, 0, 0) S(7, 13, 18) I(cube) T(0, 0, 16) S(8, 15, 8) I(cylinder)") match {
+      case Some((shapes, primitives)) => {
+//        println("Got shapes: "+shapes+", primitives: "+primitives)
+        noStroke(); fill(255); matrix { rotateX(millis()/1250f); rotateZ(millis()/1500f); lights(); }
+        primitives foreach {_.draw()}
       }
-      case NoSuccess(str, _) => println("no success! "+str)
+      case None => {}
     }
-
-    noFill();
-    primitives foreach {_.draw()}
 
     pollSave() //check if the screen should be saved
   }

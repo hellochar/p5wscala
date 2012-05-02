@@ -224,4 +224,16 @@ package object daily {
       }
     }
   }
+
+  class Mutable[T](var elem: T) {
+    def get = elem
+
+    def set(t: T) {
+      elem = t
+    }
+  }
+
+  implicit def mutable2Elem[T](m: Mutable[T]) = m.get
+
+  implicit def mutSeq2elemSeq[T](m: Seq[Mutable[T]]) = m.map(_.get)
 }

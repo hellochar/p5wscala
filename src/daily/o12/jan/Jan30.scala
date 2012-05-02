@@ -18,15 +18,6 @@ class Jan30 extends MyPApplet with Savable { app =>
   import PApplet._;
   import PConstants._;
 
-  class Mutable[T](var elem:T) {
-    def get = elem
-    def set(t:T) {
-      elem = t
-    }
-  }
-  implicit def mutable2Elem[T](m: Mutable[T]) = m.get
-  implicit def mutSeq2elemSeq[T](m: Seq[Mutable[T]]) = m.map(_.get)
-
   def lerpFunc = if(keyPressed) ((x:Float) => {(sin(x*TWO_PI)+1)/2}) else (identity[Float] _)
 
   def lerp2(a:Vec2, b:Vec2, t:Float) = a + (b - a) * lerpFunc(t);
