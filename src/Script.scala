@@ -73,7 +73,7 @@ object Script {
     val configString =
 """-injars ..\\Daily.jar
 -outjars """+sketchName+""".jar
--libraryjars 'C:\Program Files\Java\jdk1.6.0_23\jre\lib\rt.jar'
+-libraryjars 'C:\Program Files\Java\jre7\lib\rt.jar'
 
 -keep public class """+className+"""
 
