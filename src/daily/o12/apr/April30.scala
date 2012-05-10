@@ -107,6 +107,7 @@ class MutableRadial(t:Vec2, width:Float, height:Float) extends Mutable[Vec2](t) 
 
   //mutates curve's points to be a)sorted by x, b) have the same "point" at the start and the end
   def reorder() {
+    curve.points = curve.points.sortBy(_.x)
     curve.points.head.set(Vec2(0, curve.points.head.y))
     curve.points.last.set(Vec2(width, curve.points.head.y))
   }
@@ -128,7 +129,7 @@ class April30 extends BezierApplet[MutableRadial] with Savable {
   val bez = Some(new Bezier[MutableRadial](Seq()))
 
   override def setup() {
-    size(300, 300)
+    size(400, 300)
     PApplet.runSketch(Array("3D Surface"), Draw3D);
     PApplet.runSketch(Array("Radial Control"), RadialControl);
   }
@@ -140,6 +141,14 @@ class April30 extends BezierApplet[MutableRadial] with Savable {
     super.draw()
 //    println(bez.get.points)
 //    println(bez.get.curveAt(.5f))
+  }
+
+  override def mousePressed() {
+    val selNow = selected;
+    super.mousePressed();
+    if(selected != selNow) { //selection has changed
+      RadialControl.selected = None
+    }
   }
 
   def lerpRadius(a: Float, b: Float, t: Float) = a + (b - a) * t;
@@ -164,7 +173,7 @@ class April30 extends BezierApplet[MutableRadial] with Savable {
     def construct(v: Vec2) = new Mutable(v)
 
     override def setup() {
-      size(400, 200);
+      size(400, 300);
     }
 
     override def draw() {
@@ -189,7 +198,7 @@ class April30 extends BezierApplet[MutableRadial] with Savable {
     lazy val cam = new PeasyCam(this, 500);
 
     override def setup() {
-      size(640, 480, P3D);
+      size(400, 300, P3D);
       cam;
     }
 
