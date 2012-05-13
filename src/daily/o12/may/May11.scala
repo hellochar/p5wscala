@@ -3,6 +3,7 @@ package daily
 import processing.core._
 import org.zhang.lib.MyPApplet
 import themidibus.MidiBus
+import util.parsing.combinator.RegexParsers
 
 class May11 extends MyPApplet with Savable {
 
@@ -10,7 +11,7 @@ class May11 extends MyPApplet with Savable {
   import PConstants._;
   implicit def d2f(d:Double) = d.toFloat
 
-  lazy val midibus = new MidiBus(this, -1, 1)
+  var midibus:MidiBus = null
 
   val tempo = 160.0f //in units beats / minute
   val beatsPerMeasure = 4 //in units beats / measure
@@ -30,32 +31,92 @@ class May11 extends MyPApplet with Savable {
   implicit def f2t(f:Float) = Time(f)
   implicit def t2f(t:Time) = t.millis
 
-  case class Note(pitch:Int, loc:Time, volume:Int = 63, duration:Time = .25f)
+  case class Pitch(i:Int)
+  private object Pitch extends RegexParsers {
+    private val noteMap = Map('c' -> 0, 'd' -> 2, 'e' -> 4, 'f' -> 5, 'g' -> 7, 'a' -> 9, 'b' -> 11)
+    private def pcParser:Parser[String] = """[a-gA-G](#|b)?""".r
+    private def octaveParser:Parser[String] = "\\d+".r
+    private def pitchParser:Parser[Int] = (pcParser ~ opt(octaveParser)) ^^ {
+      case pc ~ Some(octave) => apply(pc, octave.toInt)
+      case pc ~ None => apply(pc)
+    }
+    //A3 = 69
+    //C3 = 60
+    //
+    def apply(pc:String, octave:Int = 3):Int =
+      24 +                                        //offset to match MIDI standard
+      octave * 12 +                               //12 semitones per octave
+      noteMap(pc.head.toLower) +                  //base pitch modifier
+      Map("" -> 0, "b" -> -1, "#" -> 1)(pc.tail)  //sharp/flat modifier
 
-  override def setup() {
-    size(500, 500)
+    def apply(pString:String):Int = parse(pitchParser, pString).get
   }
+  implicit def i2p(i:Int) = Pitch(i)
+  implicit def s2p(s:String) = Pitch(s)
+  implicit def t2p(t:(String, Int)) = Pitch(t._1, t._2)
+  implicit def p2i(p:Pitch) = p.i
+
+  case class Note(pitch:Pitch, loc:Time, volume:Int = 63, duration:Time = .25f)
+//  object Note {
+//
+//    def apply(pitchString:String, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pitchString), loc, volume, duration)
+//    def apply(pc:String, octave:Int, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pc, octave), loc, volume, duration)
+//  }
+  case class Notes(notes:Set[Note], length:Time) {
+    def play() {
+//    val sorted = notes.toSeq.sortBy(_.loc.millis)
+//    tryDelay(sorted.head.loc.toInt)
+//    for(Seq(now, next) <- sorted sliding 2) {
+//      midibus.sendNoteOn(1, now.pitch, now.volume)
+//      tryDelay((next.loc - now.loc).toInt)
+//    }
+//    midibus.sendNoteOn(1, sorted.last.pitch, sorted.last.volume)
+//    tryDelay(sorted.last.duration.toInt)
+      val start = millis()
+      def process(now:Int, last:Int) {
+        //find all notes that should start in this step, start them
+        notes.filter(n => inRange(n.loc.toInt, last, now)) foreach {n => midibus.sendNoteOn(1, n.pitch, n.volume)}
+        //find all notes that should stop in this step, stop them
+        notes.filter(n => inRange((n.loc + n.duration).toInt, last, now)) foreach {n => midibus.sendNoteOff(1, n.pitch, n.volume)}
+
+        //if there are notes left in the future, keep processing
+  //      if(notes.exists(n => (n.loc + n.duration).millis > now))
+        if(length.millis > now)
+          process(millis() - start, now)
+      }
+      process(0, 0)
+    }
+
+    def delay(t:Time) = Notes(notes map {x => x.copy(loc = x.loc + t)}, length + t)
+    def overlay(n:Notes) = Notes(notes ++ n.notes, max(length.t, n.length.t))
+    def repeat(num:Int) = {
+      def func(accum:Notes, times:Int):Notes = if(times <= 1) accum else {
+        func(this / (accum > length), times-1)
+      }
+      func(this, num)
+    }
+
+    def >(t:Time) = delay(t)
+    def /(n:Notes) = overlay(n)
+    def *(n:Int) = repeat(n)
+
+  }
+
+  def inRange[T](x:T, low:T, high:T)(implicit n:Numeric[T]) = n.lt(x, high) && n.gteq(x, low)
 
   def tryDelay(amt:Int) {
     if(amt != 0) delay(amt)
   }
 
-  def play(notes:Set[Note]) {
-    val sorted = notes.toSeq.sortBy(_.loc.millis)
-    tryDelay(sorted.head.loc.toInt)
-    for(Seq(now, next) <- sorted sliding 2) {
-      midibus.sendNoteOn(1, now.pitch, now.volume)
-      tryDelay((next.loc - now.loc).toInt)
-    }
-    midibus.sendNoteOn(1, sorted.last.pitch, sorted.last.volume)
-    tryDelay(sorted.last.duration.toInt)
+  override def setup() {
+    size(500, 500)
+    midibus = new MidiBus(this, -1, 1)
   }
 
   override def draw() {
-//    midibus.sendNoteOn(2, 65, 64);
-//    delay(200);
-//    midibus.sendNoteOff(2, 65, 64);
-    play(Set(Note(65, 0), Note(67, .25f), Note(69, .5f), Note(70, .75f)))
+//    play(Set(Note(65, 0), Note(67, .25f), Note(69, .5f), Note(70, .75f)), 1)
+    (Notes(Set(Note(65, 0), Note(67, .25f), Note(69, .5f), Note(70, .75f)), 1)*2).play();
+    println(frameCount)
     pollSave() //check if the screen should be saved
   }
 
