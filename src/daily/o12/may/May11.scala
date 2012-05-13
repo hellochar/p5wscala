@@ -61,18 +61,13 @@ class May11 extends MyPApplet with Savable {
   implicit def t2p(t:(String, Int)) = Pitch(t._1, t._2)
   implicit def p2i(p:Pitch) = p.i
 
-  case class Note(pitch:Pitch, volume:Int = 127, duration:Time = .25f)
-
-  implicit def s2n(s:String) = Note(s)
-  implicit def tst2n(t:(String, Time)) = Note(pitch = Pitch(t._1), duration = t._2)
-  implicit def tsf2n(t:(String, Float)) = Note(pitch = Pitch(t._1), duration = t._2)
-
-  //  object Note {
+  case class Note(pitch:Pitch, loc:Time, volume:Int = 127, duration:Time = .25f)
+//  object Note {
 //
 //    def apply(pitchString:String, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pitchString), loc, volume, duration)
 //    def apply(pc:String, octave:Int, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pc, octave), loc, volume, duration)
 //  }
-  case class Notes(notes:Map[Note, Time], length:Time) {
+  case class Notes(notes:Set[Note], length:Time) {
     def play() {
 //    val sorted = notes.toSeq.sortBy(_.loc.millis)
 //    tryDelay(sorted.head.loc.toInt)
@@ -86,9 +81,9 @@ class May11 extends MyPApplet with Savable {
       def process(now:Int, last:Int) {
         def inRange(x:Int, low:Int, high:Int) = (if(high < length.millis.toInt) x < high else x <= high) && x >= low
         //find all notes that should start in this step, start them
-        notes.keys.filter(n => inRange(notes(n).toInt, last, now)) foreach {n => midibus.sendNoteOn(1, n.pitch, n.volume)}
+        notes.filter(n => inRange(n.loc.toInt, last, now)) foreach {n => midibus.sendNoteOn(1, n.pitch, n.volume)}
         //find all notes that should stop in this step, stop them
-        notes.keys.filter(n => inRange((notes(n) + n.duration).toInt, last, now)) foreach {n => midibus.sendNoteOff(1, n.pitch, n.volume)}
+        notes.filter(n => inRange((n.loc + n.duration).toInt, last, now)) foreach {n => midibus.sendNoteOff(1, n.pitch, n.volume)}
 
         //if there are notes left in the future, keep processing
   //      if(notes.exists(n => (n.loc + n.duration).millis > now))
@@ -98,7 +93,7 @@ class May11 extends MyPApplet with Savable {
       process(0, 0)
     }
 
-    def delay(t:Time) = Notes(notes map {case (n, temp) => n -> (t + temp)}, length + t)
+    def delay(t:Time) = Notes(notes map {x => x.copy(loc = x.loc + t)}, length + t)
     def overlay(n:Notes) = Notes(notes ++ n.notes, max(length.t, n.length.t))
     def repeat(num:Int) = {
       def func(accum:Notes, times:Int):Notes = if(times <= 1) accum else {
@@ -111,9 +106,6 @@ class May11 extends MyPApplet with Savable {
     def /(n:Notes) = overlay(n)
     def *(n:Int) = repeat(n)
 
-  }
-  object Notes {
-    def apply(n:Note*) =
   }
 
   def tryDelay(amt:Int) {
@@ -128,7 +120,7 @@ class May11 extends MyPApplet with Savable {
   override def draw() {
 //    play(Set(Note(65, 0), Note(67, .25f), Note(69, .5f), Note(70, .75f)), 1)
 //    val note = Note("C", 0, 63, .25f)
-    (Notes("C", "D", "E", "F"), 1)*2).play();
+    (Notes(Set(Note("C", 0), Note("D", .25f), Note("E", .5f), Note("F", .75f)), 1)*2).play();
     delay(1000)
     println(frameCount)
     pollSave() //check if the screen should be saved
