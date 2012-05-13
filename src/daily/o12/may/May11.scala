@@ -31,19 +31,13 @@ class May11 extends MyPApplet with Savable {
   implicit def f2t(f:Float) = Time(f)
   implicit def t2f(t:Time) = t.millis
 
+  /**
+   * The Pitch class represents a musical tone as a MIDI scale number where 60 is the C3 and each semitone changes the index by 1.
+   * Each octave
+   */
   case class Pitch(i:Int)
   object Pitch {
     private val noteMap = Map('c' -> 0, 'd' -> 2, 'e' -> 4, 'f' -> 5, 'g' -> 7, 'a' -> 9, 'b' -> 11)
-
-    private object Parser extends RegexParsers {
-      private def pcParser:Parser[String] = """[a-gA-G](#|b)?""".r
-      private def octaveParser:Parser[String] = "\\d+".r
-      private def pitchParser:Parser[Int] = (pcParser ~ opt(octaveParser)) ^^ {
-        case pc ~ Some(octave) => Pitch.toIndex(pc, octave.toInt)
-        case pc ~ None => Pitch.toIndex(pc, 3)
-      }
-      def toIndex(pString:String) = parse(pitchParser, pString).get
-    }
     //A3 = 69
     //C3 = 60
     //
@@ -54,20 +48,42 @@ class May11 extends MyPApplet with Savable {
       Map("" -> 0, "b" -> -1, "#" -> 1)(pc.tail)  //sharp/flat modifier
 
     def apply(pc:String, octave:Int = 3):Pitch = apply(toIndex(pc, octave))
-    def apply(pString:String):Pitch = apply(Parser.toIndex(pString))
+    def apply(pString:String):Pitch = apply(PitchParser.toIndex(pString))
   }
+
+  private object PitchParser extends RegexParsers {
+    private def pc:Parser[String] = """[a-gA-G](#|b)?""".r
+    private def octave:Parser[String] = "\\d+".r
+    def pitch:Parser[Int] = (pc ~ opt(octave)) ^^ {
+      case pc ~ Some(octave) => Pitch.toIndex(pc, octave.toInt)
+      case pc ~ None => Pitch.toIndex(pc, 3)
+    }
+
+    def pitchSet: Parser[List[Int]] = rep(pitch)
+
+    def toIndex(pString:String) = parse(pitch, pString).get
+  }
+
   implicit def i2p(i:Int) = Pitch(i)
   implicit def s2p(s:String) = Pitch(s)
   implicit def t2p(t:(String, Int)) = Pitch(t._1, t._2)
   implicit def p2i(p:Pitch) = p.i
 
-  case class Note(pitch:Pitch, loc:Time, volume:Int = 127, duration:Time = .25f)
-//  object Note {
+  case class Note(pitch:Pitch, volume:Int = 64, duration:Time = .25f)
+  implicit def s2n(s:String) = Note(s)
+  implicit def tst2n(t:(String, Time)) = Note(pitch = Pitch(t._1), duration = t._2)
+  implicit def tsf2n(t:(String, Float)) = Note(pitch = Pitch(t._1), duration = t._2)
+
+
+  case class TimedNote(note:Note, loc:Time)
+  implicit def tn2n(tn:TimedNote) = tn.note
+
+  //  object Note {
 //
 //    def apply(pitchString:String, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pitchString), loc, volume, duration)
 //    def apply(pc:String, octave:Int, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pc, octave), loc, volume, duration)
 //  }
-  case class Notes(notes:Set[Note], length:Time) {
+  case class Notes(notes:Set[TimedNote], length:Time) {
     def play() {
 //    val sorted = notes.toSeq.sortBy(_.loc.millis)
 //    tryDelay(sorted.head.loc.toInt)
@@ -107,10 +123,19 @@ class May11 extends MyPApplet with Savable {
     def *(n:Int) = repeat(n)
 
   }
+  object Notes {
+  //todo: figure out how to incorporate rests; they should not appear as notes but rather just move the timing along
+  //todo: add support for chord literals
+    def apply(notes:Note*):Notes = {
+      val (set, time) = notes.foldLeft((Set[TimedNote](), Time(0))){ case ((set, time), note) => ((set + TimedNote(note, time), time + note.duration))}
+      apply(set, time)
+    }
+  }
 
   def tryDelay(amt:Int) {
     if(amt != 0) delay(amt)
   }
+
 
   override def setup() {
     size(500, 500)
@@ -120,7 +145,7 @@ class May11 extends MyPApplet with Savable {
   override def draw() {
 //    play(Set(Note(65, 0), Note(67, .25f), Note(69, .5f), Note(70, .75f)), 1)
 //    val note = Note("C", 0, 63, .25f)
-    (Notes(Set(Note("C", 0), Note("D", .25f), Note("E", .5f), Note("F", .75f)), 1)*2).play();
+    (Notes("C", "D", "E", ("F", .1f))*2).play();
     delay(1000)
     println(frameCount)
     pollSave() //check if the screen should be saved
