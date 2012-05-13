@@ -32,37 +32,47 @@ class May11 extends MyPApplet with Savable {
   implicit def t2f(t:Time) = t.millis
 
   case class Pitch(i:Int)
-  private object Pitch extends RegexParsers {
+  object Pitch {
     private val noteMap = Map('c' -> 0, 'd' -> 2, 'e' -> 4, 'f' -> 5, 'g' -> 7, 'a' -> 9, 'b' -> 11)
-    private def pcParser:Parser[String] = """[a-gA-G](#|b)?""".r
-    private def octaveParser:Parser[String] = "\\d+".r
-    private def pitchParser:Parser[Int] = (pcParser ~ opt(octaveParser)) ^^ {
-      case pc ~ Some(octave) => apply(pc, octave.toInt)
-      case pc ~ None => apply(pc)
+
+    private object Parser extends RegexParsers {
+      private def pcParser:Parser[String] = """[a-gA-G](#|b)?""".r
+      private def octaveParser:Parser[String] = "\\d+".r
+      private def pitchParser:Parser[Int] = (pcParser ~ opt(octaveParser)) ^^ {
+        case pc ~ Some(octave) => Pitch.toIndex(pc, octave.toInt)
+        case pc ~ None => Pitch.toIndex(pc, 3)
+      }
+      def toIndex(pString:String) = parse(pitchParser, pString).get
     }
     //A3 = 69
     //C3 = 60
     //
-    def apply(pc:String, octave:Int = 3):Int =
+    def toIndex(pc:String, octave:Int = 3):Int =
       24 +                                        //offset to match MIDI standard
       octave * 12 +                               //12 semitones per octave
       noteMap(pc.head.toLower) +                  //base pitch modifier
       Map("" -> 0, "b" -> -1, "#" -> 1)(pc.tail)  //sharp/flat modifier
 
-    def apply(pString:String):Int = parse(pitchParser, pString).get
+    def apply(pc:String, octave:Int = 3):Pitch = apply(toIndex(pc, octave))
+    def apply(pString:String):Pitch = apply(Parser.toIndex(pString))
   }
   implicit def i2p(i:Int) = Pitch(i)
   implicit def s2p(s:String) = Pitch(s)
   implicit def t2p(t:(String, Int)) = Pitch(t._1, t._2)
   implicit def p2i(p:Pitch) = p.i
 
-  case class Note(pitch:Pitch, loc:Time, volume:Int = 63, duration:Time = .25f)
-//  object Note {
+  case class Note(pitch:Pitch, volume:Int = 127, duration:Time = .25f)
+
+  implicit def s2n(s:String) = Note(s)
+  implicit def tst2n(t:(String, Time)) = Note(pitch = Pitch(t._1), duration = t._2)
+  implicit def tsf2n(t:(String, Float)) = Note(pitch = Pitch(t._1), duration = t._2)
+
+  //  object Note {
 //
 //    def apply(pitchString:String, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pitchString), loc, volume, duration)
 //    def apply(pc:String, octave:Int, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pc, octave), loc, volume, duration)
 //  }
-  case class Notes(notes:Set[Note], length:Time) {
+  case class Notes(notes:Map[Note, Time], length:Time) {
     def play() {
 //    val sorted = notes.toSeq.sortBy(_.loc.millis)
 //    tryDelay(sorted.head.loc.toInt)
@@ -74,10 +84,11 @@ class May11 extends MyPApplet with Savable {
 //    tryDelay(sorted.last.duration.toInt)
       val start = millis()
       def process(now:Int, last:Int) {
+        def inRange(x:Int, low:Int, high:Int) = (if(high < length.millis.toInt) x < high else x <= high) && x >= low
         //find all notes that should start in this step, start them
-        notes.filter(n => inRange(n.loc.toInt, last, now)) foreach {n => midibus.sendNoteOn(1, n.pitch, n.volume)}
+        notes.keys.filter(n => inRange(notes(n).toInt, last, now)) foreach {n => midibus.sendNoteOn(1, n.pitch, n.volume)}
         //find all notes that should stop in this step, stop them
-        notes.filter(n => inRange((n.loc + n.duration).toInt, last, now)) foreach {n => midibus.sendNoteOff(1, n.pitch, n.volume)}
+        notes.keys.filter(n => inRange((notes(n) + n.duration).toInt, last, now)) foreach {n => midibus.sendNoteOff(1, n.pitch, n.volume)}
 
         //if there are notes left in the future, keep processing
   //      if(notes.exists(n => (n.loc + n.duration).millis > now))
@@ -87,7 +98,7 @@ class May11 extends MyPApplet with Savable {
       process(0, 0)
     }
 
-    def delay(t:Time) = Notes(notes map {x => x.copy(loc = x.loc + t)}, length + t)
+    def delay(t:Time) = Notes(notes map {case (n, temp) => n -> (t + temp)}, length + t)
     def overlay(n:Notes) = Notes(notes ++ n.notes, max(length.t, n.length.t))
     def repeat(num:Int) = {
       def func(accum:Notes, times:Int):Notes = if(times <= 1) accum else {
@@ -101,8 +112,9 @@ class May11 extends MyPApplet with Savable {
     def *(n:Int) = repeat(n)
 
   }
-
-  def inRange[T](x:T, low:T, high:T)(implicit n:Numeric[T]) = n.lt(x, high) && n.gteq(x, low)
+  object Notes {
+    def apply(n:Note*) =
+  }
 
   def tryDelay(amt:Int) {
     if(amt != 0) delay(amt)
@@ -115,7 +127,9 @@ class May11 extends MyPApplet with Savable {
 
   override def draw() {
 //    play(Set(Note(65, 0), Note(67, .25f), Note(69, .5f), Note(70, .75f)), 1)
-    (Notes(Set(Note(65, 0), Note(67, .25f), Note(69, .5f), Note(70, .75f)), 1)*2).play();
+//    val note = Note("C", 0, 63, .25f)
+    (Notes("C", "D", "E", "F"), 1)*2).play();
+    delay(1000)
     println(frameCount)
     pollSave() //check if the screen should be saved
   }
