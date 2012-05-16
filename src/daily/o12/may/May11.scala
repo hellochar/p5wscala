@@ -37,7 +37,6 @@ class May11 extends MyPApplet with Savable {
     }
   }
   implicit def f2t(f:Float) = Time(f)
-  implicit def t2f(t:Time) = t.millis
 
   /**
    * The Pitch class represents a musical tone as a MIDI scale number where 60 is the C3 and each semitone changes the index by 1.
@@ -45,6 +44,8 @@ class May11 extends MyPApplet with Savable {
    */
   case class Pitch(i:Int) {
     override def toString = Pitch.toString(i)
+
+//    def chord(kind:)
 
     def shift(semi:Int) = Pitch(i + semi)
     def ^(semi:Int) = shift(semi)
@@ -118,11 +119,6 @@ class May11 extends MyPApplet with Savable {
     def ^(semi:Int) = shift(semi)
   }
 
-  //  object Note {
-//
-//    def apply(pitchString:String, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pitchString), loc, volume, duration)
-//    def apply(pc:String, octave:Int, loc:Time, volume:Int = 63, duration:Time = .125f):Note = apply(Pitch(pc, octave), loc, volume, duration)
-//  }
   case class Notes(notes:Set[TimedNote], length:Time) {
     def play() {
 //    val sorted = notes.toSeq.sortBy(_.loc.millis)
@@ -138,9 +134,9 @@ class May11 extends MyPApplet with Savable {
         implicit def tn2n(tn:TimedNote) = tn.note
         def inRange(x:Int, low:Int, high:Int) = (if(high < length.millis.toInt) x < high else x <= high) && x >= low
         //find all notes that should start in this step, start them
-        notes.filter(n => inRange(n.loc.toInt, last, now)) foreach {n => midibus.sendNoteOn(1, n.pitch, n.volume)}
+        notes.filter(n => inRange(n.loc.millis.toInt, last, now)) foreach {n => midibus.sendNoteOn(1, n.pitch, n.volume)}
         //find all notes that should stop in this step, stop them
-        notes.filter(n => inRange((n.loc + n.duration).toInt, last, now)) foreach {n => midibus.sendNoteOff(1, n.pitch, n.volume)}
+        notes.filter(n => inRange((n.loc + n.duration).millis.toInt, last, now)) foreach {n => midibus.sendNoteOff(1, n.pitch, n.volume)}
 
         //if there are notes left in the future, keep processing
   //      if(notes.exists(n => (n.loc + n.duration).millis > now))
@@ -162,6 +158,7 @@ class May11 extends MyPApplet with Savable {
     def append(n:Notes) = this / (n > length)//Notes(notes ++ n.notes map {t => t.copy(loc = t.loc + length)}, length + n.length)
     def durScale(amount:Float) = Notes(notes map {t => t.copy(note = t.note.copy(duration = Time(t.note.duration.t * amount)))}, length)
     def shift(semi:Int) = Notes(notes map {x => x.copy(note = x.note.shift(semi))}, length)
+    def scale(amount:Float) = Notes(notes map {t => t.copy(note = t.note.copy(duration = t.note.duration.t * amount), loc = t.loc.t * amount)}, length.t * amount)
 
     def >(t:Time) = delay(t)
     def /(n:Notes) = overlay(n)
@@ -169,6 +166,7 @@ class May11 extends MyPApplet with Savable {
     def +(n:Notes) = append(n)
     def >>(amount:Float) = durScale(amount)
     def ^(semi:Int) = shift(semi)
+    def **(amount:Float) = scale(amount)
 
   }
   object Notes {
@@ -186,6 +184,7 @@ class May11 extends MyPApplet with Savable {
     if(amt != 0) delay(amt)
   }
 
+  def triplet(n:Notes) = n ** (2/3f)
 
   override def setup() {
     size(500, 500)
@@ -197,11 +196,14 @@ class May11 extends MyPApplet with Savable {
 //    val note = Note("C", 0, 63, .25f)
 //    (N("CEG", "DFA", "EGB", ("FAC4", 1/8f), ("GBD4", 1/8f))*2).play();
 
-    val first = (N(("CE", 3/16f)) >> 2/3f)*4
-    val last = (N(("EG", 2/16f)) >> 1/2f)*2
-    ((first + last)*3 + (first + (last ^ -2))).play()
+//    val first = (N(("CE", 3/16f)) >> 2/3f)*4
+//    val last =  (N(("EG", 2/16f)) >> 1/2f)*2
+//    ((first + last)*3 + (first + (last ^ -2))).play()
 
-//    (N(("CE", 3/16f))*4 + N(("EG", 2/16f))*2)*4 play()
+    val t = (triplet(N("G3", "G#3", "A3") ** .5f) + N("C4", "E4", "G4")) //3 eighth notes turns put into the span of one quarter note; * 2/3f
+
+    println(t)
+    (t*4).play()
 
     delay(1000)
     println(frameCount)
