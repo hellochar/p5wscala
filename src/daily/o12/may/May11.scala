@@ -13,7 +13,7 @@ class May11 extends MyPApplet with Savable {
 
   var midibus:MidiBus = null
 
-  val tempo = 110.0f //in units beats / minute
+  val tempo = 120.0f //in units beats / minute
   val beatsPerMeasure = 4 //in units beats / measure
 
   case class Time(t:Float) { //t is the percentage of one measure that this Time represents, in units of measures
@@ -43,9 +43,14 @@ class May11 extends MyPApplet with Savable {
    * Each octave
    */
   case class Pitch(i:Int) {
-    override def toString = Pitch.toString(i)
+    override def toString = pc + octave
 
-//    def chord(kind:)
+    def pc = {
+      val indexClass = i % 12
+      val noteInv = Pitch.noteMap.map{t => t._2 -> t._1.toString}.toMap
+      noteInv.getOrElse(indexClass, noteInv(zhang.Methods.wrap(indexClass - 1, 12).toInt) + "#")
+    }
+    def octave = i / 12 - 2
 
     def shift(semi:Int) = Pitch(i + semi)
     def ^(semi:Int) = shift(semi)
@@ -61,19 +66,13 @@ class May11 extends MyPApplet with Savable {
       noteMap(pc.head.toLower) +                  //base pitch modifier
       Map("" -> 0, "b" -> -1, "#" -> 1)(pc.tail)  //sharp/flat modifier
 
-    def toString(idx:Int) = {
-      val indexClass = idx % 12
-      val noteInv = noteMap.map{t => t._2 -> t._1.toString}.toMap
-      val pc = noteInv.getOrElse(indexClass, noteInv(zhang.Methods.wrap(indexClass - 1, 12).toInt) + "#")
-
-      val octave = idx / 12 - 2
-
-      pc + octave
-    }
-
     def apply(pc:String, octave:Int = 3):Pitch = apply(toIndex(pc, octave))
     def apply(pString:String):Pitch = apply(PitchParser.toIndex(pString))
   }
+  implicit def i2p(i:Int) = Pitch(i)
+  implicit def s2p(s:String) = Pitch(s)
+  implicit def t2p(t:(String, Int)) = Pitch(t._1, t._2)
+  implicit def p2i(p:Pitch) = p.i
 
   private object PitchParser extends RegexParsers {
     private def pc:Parser[String] = """[a-gA-G](#|b)?""".r
@@ -89,10 +88,6 @@ class May11 extends MyPApplet with Savable {
     def toIndex(pString:String) = parse(pitch, pString).get
   }
 
-  implicit def i2p(i:Int) = Pitch(i)
-  implicit def s2p(s:String) = Pitch(s)
-  implicit def t2p(t:(String, Int)) = Pitch(t._1, t._2)
-  implicit def p2i(p:Pitch) = p.i
 
   case class Note(pitch:Pitch, volume:Int = 64, duration:Time = .25f) {
 
@@ -160,6 +155,8 @@ class May11 extends MyPApplet with Savable {
     def shift(semi:Int) = Notes(notes map {x => x.copy(note = x.note.shift(semi))}, length)
     def scale(amount:Float) = Notes(notes map {t => t.copy(note = t.note.copy(duration = t.note.duration.t * amount), loc = t.loc.t * amount)}, length.t * amount)
 
+    def timed(t:Time) = Notes(notes, t)
+
     def >(t:Time) = delay(t)
     def /(n:Notes) = overlay(n)
     def *(n:Int) = repeat(n)
@@ -188,7 +185,8 @@ class May11 extends MyPApplet with Savable {
 
   override def setup() {
     size(500, 500)
-    midibus = new MidiBus(this, -1, 1)
+    MidiBus.list();
+    midibus = new MidiBus(this, -1, 2)
   }
 
   override def draw() {
@@ -196,18 +194,29 @@ class May11 extends MyPApplet with Savable {
 //    val note = Note("C", 0, 63, .25f)
 //    (N("CEG", "DFA", "EGB", ("FAC4", 1/8f), ("GBD4", 1/8f))*2).play();
 
-//    val first = (N(("CE", 3/16f)) >> 2/3f)*4
-//    val last =  (N(("EG", 2/16f)) >> 1/2f)*2
-//    ((first + last)*3 + (first + (last ^ -2))).play()
+    val first = (N(("CE", 3/16f)) >> 2/3f)*4
+    val last =  (N(("EG", 2/16f)) >> 1/2f)*2
+    ((first + last)*3 + (first + (last ^ -2))).repeat(10).play()
 
-    val t = (triplet(N("G3", "G#3", "A3") ** .5f) + N("C4", "E4", "G4")) //3 eighth notes turns put into the span of one quarter note; * 2/3f
+//    val t = (triplet(N("G3", "G#3", "A3") ** .5f) + N("C4", "E4", "G4")) //3 eighth notes turns put into the span of one quarter note; * 2/3f
 
-    println(t)
-    (t*4).play()
+//    println(t)
+//    (t*4).play()
+
+//    val base = (List("C", "A", "F", "G") map {x => Notes(x+"3", x+"4", x+"5").timed(1)} reduceLeft {_ + _})
+
+//    val melody = N("C", "C", ("C", 1/2f), ("-", ))
+
 
     delay(1000)
     println(frameCount)
     pollSave() //check if the screen should be saved
+  }
+
+
+  override def exit() {
+    for(x <- 0 until 127) midibus.sendNoteOff(1, x, 127)
+    super.exit()
   }
 
   override def keyPressed() {
